@@ -3,6 +3,7 @@ import { tokenMatches } from "../copilot/routes.js";
 import { describeKeys } from "../copilot/payload.js";
 import { extractMessages } from "./payload.js";
 import { handleIncoming } from "./agent.js";
+import { track } from "../inflight.js";
 
 const MAX_SEEN = 2000;
 
@@ -36,7 +37,7 @@ export function createWhatsAppRouter({ deps, token, log = console.log }) {
       if (seen.has(message.id)) continue;
       seen.add(message.id);
       if (seen.size > MAX_SEEN) seen.delete(seen.values().next().value);
-      handleIncoming(message, { ...deps, log }).catch((error) => log(`whatsapp handler crashed: ${error.message}`));
+      track(() => handleIncoming(message, { ...deps, log }), (error) => log(`whatsapp handler crashed: ${error.message}`));
     }
   });
 

@@ -34,17 +34,23 @@ export function sanitizeTranslation(translated, source = STRINGS) {
   );
 }
 
+const COLLECTION = "translations";
+
 /**
  * Return the interface strings in the language. English needs no model call.
- * The cache holds promises, so requests that arrive together share one model call.
+ * Finished translations are saved in the db, so a restart does not call the model again.
+ * The in-memory cache holds promises, so requests that arrive together share one model call.
  */
-export function run(ai, { language }) {
+export function run(ai, { language }, db = null) {
   if (language === "en") return Promise.resolve({ version: STRINGS_VERSION, strings: STRINGS });
   if (!cache.has(language)) {
-    const pending = translate(ai, language).catch((error) => {
-      cache.delete(language);
-      throw error;
-    });
+    const saved = db?.get(COLLECTION, language);
+    const pending = saved?.version === STRINGS_VERSION
+      ? Promise.resolve({ version: saved.version, strings: saved.strings })
+      : translate(ai, language).then((result) => { db?.put(COLLECTION, language, result); return result; }).catch((error) => {
+        cache.delete(language);
+        throw error;
+      });
     cache.set(language, pending);
   }
   return cache.get(language);
@@ -66,8 +72,8 @@ async function translate(ai, language) {
  * Translate every language in the background, one at a time, so the first
  * worker who picks a language does not wait. Failures are retried on demand.
  */
-export async function warmUp(ai) {
+export async function warmUp(ai, db = null) {
   for (const language of Object.keys(LANGUAGES)) {
-    await run(ai, { language }).catch(() => {});
+    await run(ai, { language }, db).catch(() => {});
   }
 }

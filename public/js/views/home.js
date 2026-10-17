@@ -6,7 +6,8 @@ import * as saathi from "../saathi.js";
 import { speechUrl } from "../speech.js";
 import { renderCaptions } from "./captions.js";
 
-const POLL_MS = 5000;
+/** Poll faster while riding, when a call message can arrive, and slowly otherwise. */
+const POLL_MS = { riding: 5000, idle: 20000 };
 const CALLER_ICONS = { customer: "person", restaurant: "restaurant", platform: "two_wheeler", family: "family_restroom", other: "call" };
 
 let app;
@@ -45,12 +46,19 @@ export function enter() {
   unsubscribe = saathi.listen(onSaathi);
   setLiveButton(saathi.isLive() ? "live" : "idle");
   refresh();
-  clearInterval(pollTimer);
-  pollTimer = setInterval(() => { if (!document.hidden) refresh(); }, POLL_MS);
+  schedulePoll();
+}
+
+function schedulePoll() {
+  clearTimeout(pollTimer);
+  pollTimer = setTimeout(async () => {
+    if (!document.hidden) await refresh();
+    schedulePoll();
+  }, rider?.status === "riding" ? POLL_MS.riding : POLL_MS.idle);
 }
 
 export function leave() {
-  clearInterval(pollTimer);
+  clearTimeout(pollTimer);
   unsubscribe?.();
   unsubscribe = null;
 }

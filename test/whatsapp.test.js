@@ -157,3 +157,17 @@ test("audio Gemini already reads is passed through; other audio converts with ff
     assert.equal(passthrough.converted, false);
   }
 });
+
+test("inflight tracks background jobs so shutdown can wait for them", async () => {
+  const { track, pending, drain } = await import("../src/inflight.js");
+  let release;
+  const job = track(() => new Promise((resolve) => { release = resolve; }));
+  assert.equal(pending(), 1);
+  const drained = drain(5000);
+  release();
+  await job;
+  await drained;
+  assert.equal(pending(), 0);
+  await track(() => { throw new Error("boom"); }, () => {});
+  assert.equal(pending(), 0);
+});

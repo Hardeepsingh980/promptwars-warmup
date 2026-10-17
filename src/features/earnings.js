@@ -11,7 +11,7 @@ const MAX_ENTRIES = 366;
 export function createEarningsService(db) {
   return {
     list(userId) {
-      return db.find(COLLECTION, (entry) => entry.userId === userId).sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt));
+      return db.where(COLLECTION, "userId", userId).sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt));
     },
     add(userId, { date, platform = "", earnings, hours, fuel = 0, other = 0 }) {
       const day = /^\d{4}-\d{2}-\d{2}$/.test(date ?? "") ? date : new Date().toISOString().slice(0, 10);

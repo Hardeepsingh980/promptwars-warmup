@@ -46,6 +46,20 @@ test("the json db stores, finds, updates, and persists documents", async () => {
   assert.equal(db.get("users", "zzz"), null);
 });
 
+test("the json db keeps a secondary index for per-user lookups", async () => {
+  const db = await openDb(null);
+  db.put("earnings", "e1", { userId: "u1", net: 1 });
+  db.put("earnings", "e2", { userId: "u2", net: 2 });
+  db.put("earnings", "e3", { userId: "u1", net: 3 });
+  assert.deepEqual(db.where("earnings", "userId", "u1").map((doc) => doc.id).sort(), ["e1", "e3"]);
+  db.update("earnings", "e3", { userId: "u2" });
+  assert.deepEqual(db.where("earnings", "userId", "u1").map((doc) => doc.id), ["e1"]);
+  db.remove("earnings", "e1");
+  assert.deepEqual(db.where("earnings", "userId", "u1"), []);
+  assert.equal(db.where("earnings", "userId", "nobody").length, 0);
+  assert.throws(() => db.where("earnings", "net", 2), /not an indexed field/);
+});
+
 test("signup sets a session cookie and /me returns the user without the hash", async () => {
   const c = server.client();
   const { status, body } = await c.signup({ name: "Fatima", phone: "9876500001", password: "secret1", language: "te" });

@@ -92,6 +92,8 @@ export function createAvatar(container) {
   let glanceAt = performance.now() + 2000;
   let speakingEnergy = 0;
   let frame = 0;
+  let visible = true;
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
 
   const setState = (next) => {
     state = STATES.includes(next) ? next : "idle";
@@ -129,12 +131,14 @@ export function createAvatar(container) {
   function animate(now) {
     frame = requestAnimationFrame(animate);
     const seconds = now / 1000;
+    const calm = reduceMotion.matches;
 
     // Breathing and a slow sway keep the character alive even when nothing happens.
-    const breathe = 1 + Math.sin(seconds * 1.6) * 0.012;
-    const sway = state === "riding" ? Math.sin(seconds * 6) * 1.6 : Math.sin(seconds * 0.7) * 2;
+    // With reduced motion on, the head stays still and only the eyes and mouth move.
+    const breathe = calm ? 1 : 1 + Math.sin(seconds * 1.6) * 0.012;
+    const sway = calm ? 0 : state === "riding" ? Math.sin(seconds * 6) * 1.6 : Math.sin(seconds * 0.7) * 2;
     const tilt = state === "listening" ? -7 : state === "thinking" ? 5 : 0;
-    const bob = speakingEnergy * -5;
+    const bob = calm ? 0 : speakingEnergy * -5;
     head.style.transform = `translate(${sway}px, ${bob}px) rotate(${tilt + sway * 0.5}deg) scale(${breathe})`;
 
     // Eyes: follow the pointer, otherwise glance somewhere new every few seconds.
@@ -173,7 +177,14 @@ export function createAvatar(container) {
     }
     smile.style.opacity = open.ry > 3 ? "0" : "1";
   }
-  frame = requestAnimationFrame(animate);
+  // The animation loop runs only while the stage is on screen and the tab is visible.
+  const start = () => { if (!frame) frame = requestAnimationFrame(animate); };
+  const pause = () => { cancelAnimationFrame(frame); frame = 0; };
+  const sync = () => { if (visible && !document.hidden) start(); else pause(); };
+  const observer = new IntersectionObserver((entries) => { visible = entries.some((entry) => entry.isIntersecting); sync(); });
+  observer.observe(container);
+  document.addEventListener("visibilitychange", sync);
+  start();
 
   return {
     setState,
@@ -186,7 +197,9 @@ export function createAvatar(container) {
       frequencies = new Uint8Array(node.frequencyBinCount);
     },
     destroy() {
-      cancelAnimationFrame(frame);
+      pause();
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", sync);
       svg.remove();
     },
   };

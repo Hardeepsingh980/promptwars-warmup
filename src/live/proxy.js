@@ -2,12 +2,11 @@
  * A WebSocket bridge between the rider's browser and the Gemini Live API.
  * The browser never sees the API key. The server runs Saathi's tools against the rider's data.
  *
- * Browser -> server JSON frames:
- *   { type: "audio", data }   16 kHz mono 16-bit PCM, base64, sent as the mic captures it
- *   { type: "text", text }    a typed message
- *   { type: "end" }           the mic stopped (audio stream end)
- * Server -> browser JSON frames:
- *   { type: "ready" } { type: "audio", data } (24 kHz PCM) { type: "interrupted" } { type: "turnComplete" }
+ * Audio is sent as raw binary WebSocket frames in both directions, which avoids the base64
+ * and JSON overhead of text frames: browser -> server is 16 kHz mono 16-bit PCM as the mic
+ * captures it, server -> browser is Saathi's 24 kHz PCM.
+ * Browser -> server JSON frames: { type: "text", text } a typed message; { type: "end" } the mic stopped.
+ * Server -> browser JSON frames: { type: "ready" } { type: "interrupted" } { type: "turnComplete" }
  *   { type: "caption", role, text } { type: "tool", name, result, uiEvent } { type: "error", message } { type: "goAway" }
  */
 import { WebSocketServer, WebSocket } from "ws";
@@ -94,7 +93,9 @@ function bridge(browser, { user, deps, intro, log }) {
       if (message.goAway) send({ type: "goAway" });
       return;
     }
-    for (const part of content.modelTurn?.parts ?? []) if (part.inlineData?.data) send({ type: "audio", data: part.inlineData.data });
+    for (const part of content.modelTurn?.parts ?? []) {
+      if (part.inlineData?.data && browser.readyState === WebSocket.OPEN) browser.send(Buffer.from(part.inlineData.data, "base64"), { binary: true });
+    }
     if (content.inputTranscription?.text) send({ type: "caption", role: "user", text: content.inputTranscription.text });
     if (content.outputTranscription?.text) send({ type: "caption", role: "saathi", text: content.outputTranscription.text });
     if (content.interrupted) send({ type: "interrupted" });
@@ -104,18 +105,19 @@ function bridge(browser, { user, deps, intro, log }) {
   upstream.on("error", (error) => { log(`live upstream error: ${error.message}`); send({ type: "error", message: "Saathi lost the voice connection" }); });
   upstream.on("close", (code, reason) => { send({ type: "closed", code, reason: reason.toString().slice(0, 120) }); browser.close(); });
 
-  browser.on("message", (raw) => {
-    if (raw.length > MAX_FRAME_BYTES) return;
+  browser.on("message", (raw, isBinary) => {
+    if (raw.length > MAX_FRAME_BYTES || !ready) return;
+    if (isBinary) {
+      sendUpstream({ realtimeInput: { audio: { data: raw.toString("base64"), mimeType: "audio/pcm;rate=16000" } } });
+      return;
+    }
     let frame;
     try {
       frame = JSON.parse(raw.toString());
     } catch {
       return;
     }
-    if (!ready) return;
-    if (frame.type === "audio" && typeof frame.data === "string") {
-      sendUpstream({ realtimeInput: { audio: { data: frame.data, mimeType: "audio/pcm;rate=16000" } } });
-    } else if (frame.type === "text" && typeof frame.text === "string" && frame.text.trim()) {
+    if (frame.type === "text" && typeof frame.text === "string" && frame.text.trim()) {
       sendUpstream({ clientContent: { turns: [{ role: "user", parts: [{ text: frame.text.slice(0, 2000) }] }], turnComplete: true } });
     } else if (frame.type === "end") {
       sendUpstream({ realtimeInput: { audioStreamEnd: true } });

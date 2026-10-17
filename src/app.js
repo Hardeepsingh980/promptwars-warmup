@@ -1,3 +1,4 @@
+import compression from "compression";
 import express from "express";
 import { fileURLToPath } from "node:url";
 import { config, LANGUAGES, WORK_TYPES } from "./config.js";
@@ -24,6 +25,7 @@ const SHARED_DIR = fileURLToPath(new URL("../shared", import.meta.url));
 
 function securityHeaders(request, response, next) {
   const host = request.get("host") ?? "";
+  if (request.secure || request.get("x-forwarded-proto") === "https") response.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
   response.set({
     "Content-Security-Policy": [
       "default-src 'self'",
@@ -68,6 +70,7 @@ export function createApp({ ai, db, rateLimit = config.rateLimit, secrets = conf
   app.disable("x-powered-by");
   app.set("trust proxy", 1);
   app.use(securityHeaders);
+  app.use(compression());
   app.use(express.static(PUBLIC_DIR, { index: "index.html" }));
   app.use("/shared", express.static(SHARED_DIR));
   app.get("/health", (request, response) => response.json({ ok: true }));
@@ -82,7 +85,7 @@ export function createApp({ ai, db, rateLimit = config.rateLimit, secrets = conf
     response.json({ languages: LANGUAGES, states: STATES, workTypes: WORK_TYPES, helplines: HELPLINES, phoneLine: config.phoneLine, whatsappNumber: config.whatsapp.number });
   });
   api.get("/strings", async (request, response) => {
-    const result = await translate.run(ai, translate.parseInput(request.query));
+    const result = await translate.run(ai, translate.parseInput(request.query), db);
     response.set("Cache-Control", "public, max-age=3600");
     response.json(result);
   });

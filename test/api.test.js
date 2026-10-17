@@ -154,3 +154,28 @@ test("GET /api/strings shares one model call between requests for the same langu
   assert.deepEqual(first, second);
   assert.equal(fakeAi.calls.length, 1);
 });
+
+test("translations are saved in the db, so a second server start needs no model call", async () => {
+  const { run } = await import("../src/features/translate.js");
+  const { openDb } = await import("../src/db.js");
+  const { createFakeAi } = await import("./helpers.js");
+  const db = await openDb(null);
+  const ai = createFakeAi();
+  ai.reply = (request) => Object.fromEntries(Object.keys(request.schema.properties).map((key) => [key, `kn:${key}`]));
+  const first = await run(ai, { language: "kn" }, db);
+  assert.equal(first.strings.nav_home, "kn:nav_home");
+  assert.equal(ai.calls.length, 1);
+  assert.equal(db.get("translations", "kn").strings.nav_home, "kn:nav_home");
+});
+
+test("responses are compressed when the client accepts it", async () => {
+  const response = await fetch(baseUrl + "/css/app.css", { headers: { "Accept-Encoding": "gzip" } });
+  assert.equal(response.headers.get("content-encoding"), "gzip");
+});
+
+test("HSTS is sent only on https requests", async () => {
+  const plain = await fetch(baseUrl + "/health");
+  assert.equal(plain.headers.get("strict-transport-security"), null);
+  const forwarded = await fetch(baseUrl + "/health", { headers: { "X-Forwarded-Proto": "https" } });
+  assert.match(forwarded.headers.get("strict-transport-security"), /max-age/);
+});

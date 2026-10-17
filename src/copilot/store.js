@@ -38,8 +38,7 @@ export function createCopilotStore(db) {
 
     /** Newest first. */
     listMessages(userId) {
-      return db.find(MESSAGES, (message) => message.userId === userId)
-        .sort((a, b) => b.receivedAt.localeCompare(a.receivedAt));
+      return db.where(MESSAGES, "userId", userId).sort((a, b) => b.receivedAt.localeCompare(a.receivedAt));
     },
 
     unheardMessages: function (userId) {

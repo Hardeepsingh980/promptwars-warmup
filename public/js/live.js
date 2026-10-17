@@ -1,21 +1,12 @@
 /**
  * The browser side of a live voice session with Saathi.
- * Mic audio streams to the server as 16 kHz PCM. Saathi's 24 kHz PCM comes back and plays
- * through an analyser, so the avatar's mouth follows the real voice.
+ * Mic audio streams to the server as 16 kHz PCM binary frames. Saathi's 24 kHz PCM comes back
+ * the same way and plays through an analyser, so the avatar's mouth follows the real voice.
  */
 
 const INPUT_RATE = 16_000;
 const OUTPUT_RATE = 24_000;
 const SEND_EVERY_SAMPLES = 1600; // 100 ms
-
-const toBase64 = (int16) => btoa(String.fromCharCode(...new Uint8Array(int16.buffer)));
-
-function fromBase64(data) {
-  const binary = atob(data);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return new Int16Array(bytes.buffer);
-}
 
 function downsample(samples, fromRate, toRate) {
   const ratio = fromRate / toRate;
@@ -38,6 +29,8 @@ function downsample(samples, fromRate, toRate) {
 export async function startLiveSession({ avatar, intro = false, handlers = {} }) {
   const protocol = location.protocol === "https:" ? "wss" : "ws";
   const socket = new WebSocket(`${protocol}://${location.host}/api/live${intro ? "?intro=1" : ""}`);
+  // Audio travels as raw binary frames (16-bit PCM). JSON is only for control messages.
+  socket.binaryType = "arraybuffer";
   const context = new AudioContext();
   const analyser = context.createAnalyser();
   analyser.fftSize = 1024;
@@ -58,8 +51,8 @@ export async function startLiveSession({ avatar, intro = false, handlers = {} })
     handlers.onSpeaking?.(isSpeaking);
   }
 
-  function playChunk(data) {
-    const samples = fromBase64(data);
+  function playChunk(arrayBuffer) {
+    const samples = new Int16Array(arrayBuffer);
     const buffer = context.createBuffer(1, samples.length, OUTPUT_RATE);
     const channel = buffer.getChannelData(0);
     for (let i = 0; i < samples.length; i++) channel[i] = samples[i] / 0x8000;
@@ -99,13 +92,14 @@ export async function startLiveSession({ avatar, intro = false, handlers = {} })
       let offset = 0;
       for (const chunk of pending) { merged.set(chunk, offset); offset += chunk.length; }
       pending = [];
-      say({ type: "audio", data: toBase64(downsample(merged, context.sampleRate, INPUT_RATE)) });
+      if (socket.readyState === WebSocket.OPEN) socket.send(downsample(merged, context.sampleRate, INPUT_RATE).buffer);
     };
     source.connect(recorder).connect(mute).connect(context.destination);
     mic = { stream, source, recorder };
   }
 
   socket.onmessage = async (event) => {
+    if (event.data instanceof ArrayBuffer) return playChunk(event.data);
     const frame = JSON.parse(event.data);
     switch (frame.type) {
       case "ready":
@@ -118,7 +112,6 @@ export async function startLiveSession({ avatar, intro = false, handlers = {} })
           handlers.onMicError?.();
         }
         break;
-      case "audio": playChunk(frame.data); break;
       case "interrupted": stopPlayback(); break;
       case "caption": handlers.onCaption?.(frame); break;
       case "tool": handlers.onTool?.(frame); break;

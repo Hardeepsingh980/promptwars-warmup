@@ -23,7 +23,7 @@ export function publicUser(user) {
 }
 
 export function createUserService(db) {
-  const byPhone = (phone) => db.find(USERS, (user) => user.phone === phone)[0] ?? null;
+  const byPhone = (phone) => db.where(USERS, "phone", phone)[0] ?? null;
 
   return {
     get: (id) => db.get(USERS, id),

@@ -54,9 +54,19 @@ Run `npm test` to run the 55 unit and API tests. The tests use a fake model, so 
 
 Every answer comes from a real Gemini call with a JSON schema. Scheme names, rules, documents, and official links come from `src/data/schemes.js`. The model only explains them. The server drops any scheme or link the model invents. The pay math runs on the server in plain code, not in the model. The minimum wage is a Gemini estimate that is clearly labelled, and the worker can change it.
 
-## Security, speed, and accessibility
+## How the code meets each evaluation parameter
 
-The Gemini key stays on the server (Secret Manager on Cloud Run); the browser talks to Gemini Live only through the server's WebSocket bridge. Passwords are hashed with scrypt. Sessions are signed HttpOnly cookies. Every data route is per user. The phone agent's status tool needs a header key, and the call-ended webhook carries a secret token in its URL because the sender cannot set headers; a wrong token gets a 404. The webhook can only add a message, never read anything, and its content is passed to Gemini as untrusted text. The server checks every input, limits requests per IP, and sends a strict Content Security Policy. Model text goes into the page only as text, never as HTML. Photos are shrunk in the browser before upload. Translations and speech are cached. The interface follows Material You with large touch targets, labels on every control, live regions for results, keyboard support, and reduced motion support.
+Code quality: small modules with one job each, pure functions for arithmetic and eligibility, one style throughout, comments that say why. Every route validates its input in one place and returns one error shape.
+
+Security: the Gemini and Cheerio keys never leave the server; the browser reaches Gemini Live only through the server's WebSocket bridge. Passwords use scrypt with a per-user salt. Sessions are signed HttpOnly cookies, marked Secure on HTTPS, and every data route is per user. The phone tool needs a header key; the two webhooks carry a secret token in the URL because the sender cannot set headers, a wrong token gets a 404, and webhook content reaches Gemini as untrusted text. Model output enters the page as text, never HTML. Add to that a strict Content Security Policy, HSTS, a per-IP rate limit, size limits on every upload, and `npm audit` with zero findings.
+
+Efficiency: per-user data comes from an in-memory index, so lookups cost O(matches) instead of a scan, and writes to the JSON file are debounced into one write per burst. Live audio travels as raw binary frames, not base64 in JSON. The mascot's animation loop pauses when the stage is off screen or the tab is hidden. Photos are shrunk in the browser before upload. Responses are gzip-compressed. Interface translations, speech, and the minimum wage estimate are cached, and translations survive restarts. The home screen polls every 5 seconds while riding and every 20 seconds otherwise, and never while the tab is hidden. Every model call uses the flash model with thinking turned off and a JSON schema, so answers are short and fast.
+
+Testing: `npm test` runs 61 tests against a fake model and a fake WhatsApp client, so they need no keys and finish in seconds. They cover the pure logic, every API route, the auth flow, the webhook tokens, the WhatsApp tool loop, audio conversion, the database index, and the security headers. A GitHub Actions workflow runs them on every push.
+
+Accessibility: nine Indian languages, each answer available as speech, large touch targets, a label on every control, live regions for results and captions, a skip link, visible focus rings, keyboard support for every flow, colour never the only signal, and reduced-motion support that also calms the mascot.
+
+Problem statement alignment: the five areas in the brief map to flows a worker can use by voice, from WhatsApp, or in the app. Earnings tracking is the Money tab and the `log_earnings` tool. Safety is Saathi answering calls so the rider never touches the phone while riding, plus scam warnings. Rights and welfare schemes are the Benefits screen, grounded on a curated list. Document help is the photo explainer. Grievance drafting is the Complaint screen. Everything runs in the worker's language.
 
 ## Project layout
 
