@@ -35,8 +35,73 @@
   </header>
 
   <main id="main" tabindex="-1">
+    <!-- Co-pilot: Saathi answers calls while the rider rides and briefs them at the next stop. -->
+    <section id="view-copilot" class="view" aria-labelledby="cp-title" data-view="copilot" hidden>
+      <div class="hero hero--copilot">
+        <div id="cp-avatar" class="avatar" data-state="idle"></div>
+        <h1 id="cp-title" data-i18n="cp_title"></h1>
+        <p class="cp-hint" data-i18n="cp_hint"></p>
+        <p id="cp-status" class="cp-status" role="status" aria-live="polite"></p>
+        <div class="hero__actions">
+          <button id="cp-toggle" class="btn btn--filled btn--large" type="button" aria-pressed="false"></button>
+          <button id="cp-talk" class="btn btn--tertiary btn--large" type="button" aria-pressed="false">
+            <span class="icon" aria-hidden="true">mic</span><span id="cp-talk-label" data-i18n="cp_talk"></span>
+          </button>
+        </div>
+        <p id="cp-listening" class="banner banner--info" role="status" hidden>
+          <span class="icon" aria-hidden="true">graphic_eq</span><span data-i18n="cp_listening"></span>
+        </p>
+        <p id="cp-reply" class="result__transcript" aria-live="polite" hidden></p>
+        <form id="cp-ask-form" class="compose" autocomplete="off">
+          <div class="field">
+            <label for="cp-ask-text" data-i18n="cp_type_label"></label>
+            <input id="cp-ask-text" class="field__control" type="text" maxlength="500" enterkeyhint="send">
+          </div>
+          <button class="btn btn--filled btn--icon" type="submit" data-i18n-aria="ask_send"><span class="icon" aria-hidden="true">send</span></button>
+        </form>
+      </div>
+
+      <section class="card stack" aria-labelledby="cp-calls-title">
+        <div class="card__head">
+          <h2 id="cp-calls-title" data-i18n="cp_calls_title"></h2>
+          <span id="cp-new" class="verdict verdict--low" hidden></span>
+        </div>
+        <ul id="cp-list" class="call-list"></ul>
+        <button id="cp-play" class="btn btn--tonal" type="button"><span class="icon" aria-hidden="true">play_circle</span><span data-i18n="cp_play"></span></button>
+      </section>
+
+      <form id="cp-order-form" class="card stack" novalidate>
+        <div>
+          <h2 data-i18n="cp_order_title"></h2>
+          <p class="card__hint" data-i18n="cp_order_hint"></p>
+        </div>
+        <div class="grid-2">
+          <div class="field"><label for="cp-name" data-i18n="f_name"></label><input id="cp-name" name="riderName" class="field__control" type="text" maxlength="40" autocomplete="given-name"></div>
+          <div class="field"><label for="cp-platform" data-i18n="f_platform"></label><input id="cp-platform" name="platform" class="field__control" type="text" maxlength="40"></div>
+          <div class="field"><label for="cp-area" data-i18n="f_area"></label><input id="cp-area" name="customerArea" class="field__control" type="text" maxlength="80"></div>
+          <div class="field"><label for="cp-eta" data-i18n="f_eta"></label><input id="cp-eta" name="etaMinutes" class="field__control" type="number" inputmode="numeric" min="0" max="240"></div>
+        </div>
+        <div class="row">
+          <button class="btn btn--filled" type="submit"><span class="icon" aria-hidden="true">save</span><span data-i18n="cp_save"></span></button>
+          <button id="cp-delivered" class="btn btn--outlined" type="button"><span class="icon" aria-hidden="true">task_alt</span><span data-i18n="cp_delivered"></span></button>
+        </div>
+      </form>
+
+      <section class="card stack" aria-labelledby="cp-setup-title">
+        <h2 id="cp-setup-title" data-i18n="cp_setup_title"></h2>
+        <p class="card__hint" data-i18n="cp_setup_hint"></p>
+        <div class="chips" lang="en">
+          <a class="chip" href="tel:**61*+918031450668%23"><span class="icon" aria-hidden="true">dialpad</span>**61*+918031450668#</a>
+          <a class="chip" href="tel:**67*+918031450668%23"><span class="icon" aria-hidden="true">dialpad</span>**67*+918031450668#</a>
+        </div>
+        <p class="field__help" data-i18n="cp_setup_off"></p>
+        <p data-i18n="cp_setup_test"></p>
+        <a class="btn btn--outlined" href="tel:+918031450668"><span class="icon" aria-hidden="true">call</span>+91 80314 50668</a>
+      </section>
+    </section>
+
     <!-- Ask: the home screen. Photo, voice, or text in. Explanation and next steps out. -->
-    <section id="view-ask" class="view" aria-labelledby="ask-title" data-view="ask">
+    <section id="view-ask" class="view" aria-labelledby="ask-title" data-view="ask" hidden>
       <div class="hero">
         <h1 id="ask-title" data-i18n="ask_title"></h1>
         <p data-i18n="ask_hint"></p>
@@ -168,6 +233,7 @@
   <p class="footer-note" data-i18n="footer"></p>
 
   <nav class="nav-bar" aria-label="Main">
+    <a class="nav-item" href="#copilot" data-nav="copilot"><span class="nav-item__pill"><span class="icon" aria-hidden="true">support_agent</span></span><span data-i18n="nav_copilot"></span></a>
     <a class="nav-item" href="#ask" data-nav="ask"><span class="nav-item__pill"><span class="icon" aria-hidden="true">auto_awesome</span></span><span data-i18n="nav_ask"></span></a>
     <a class="nav-item" href="#earnings" data-nav="earnings"><span class="nav-item__pill"><span class="icon" aria-hidden="true">payments</span></span><span data-i18n="nav_earnings"></span></a>
     <a class="nav-item" href="#benefits" data-nav="benefits"><span class="nav-item__pill"><span class="icon" aria-hidden="true">volunteer_activism</span></span><span data-i18n="nav_benefits"></span></a>

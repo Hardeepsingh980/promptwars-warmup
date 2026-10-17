@@ -322,7 +322,7 @@ select.field__control {
 /* ---------- Navigation bar ---------- */
 .nav-bar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(5, 1fr);
   height: calc(var(--nav-height) + env(safe-area-inset-bottom));
   padding: var(--space-3) var(--space-2) env(safe-area-inset-bottom);
   background: rgb(243 237 247 / 0.92);
@@ -387,3 +387,65 @@ dialog[open] { animation: enter var(--md-slow) var(--md-ease); }
 /* Spinning icon while the language loads */
 [aria-busy="true"] > .icon { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- Co-pilot avatar ---------- */
+.hero--copilot { text-align: center; }
+.hero--copilot .compose { text-align: left; }
+.cp-hint { margin-bottom: var(--space-3) !important; }
+.cp-status { font-weight: 500; color: var(--md-on-surface) !important; margin-bottom: var(--space-4) !important; }
+
+.avatar {
+  --ring-a: var(--md-primary);
+  --ring-b: var(--md-tertiary);
+  position: relative; width: 168px; aspect-ratio: 1; margin: 0 auto var(--space-4);
+  display: grid; place-items: center;
+}
+.avatar::before {
+  content: ""; position: absolute; inset: -10px; border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--ring-a), var(--ring-b), var(--md-secondary-container), var(--ring-a));
+  filter: blur(14px); opacity: 0.55;
+  animation: spin 8s linear infinite;
+  transition: opacity var(--md-standard) var(--md-ease);
+}
+.avatar::after {
+  content: ""; position: absolute; inset: 2px; border-radius: 50%;
+  border: 2px solid rgb(255 255 255 / 0.6);
+  box-shadow: inset 0 0 24px rgb(103 80 164 / 0.25);
+}
+.avatar__face { position: relative; z-index: 1; width: 100%; height: 100%; filter: drop-shadow(0 8px 16px rgb(28 27 31 / 0.18)); }
+.avatar__eye { transform-box: fill-box; transform-origin: center; animation: blink 5s infinite; }
+.avatar__pupil { transition: transform var(--md-standard) var(--md-ease); }
+.avatar__brow { transition: transform var(--md-standard) var(--md-ease); }
+.avatar__mouth { transition: height 60ms linear, y 60ms linear; }
+
+.avatar[data-state="riding"] { --ring-a: #1e88e5; --ring-b: var(--md-primary); }
+.avatar[data-state="riding"]::before { animation-duration: 3s; }
+.avatar[data-state="listening"] { --ring-a: var(--md-error); --ring-b: var(--md-tertiary); }
+.avatar[data-state="listening"]::before { opacity: 0.9; animation: spin 2s linear infinite, pulse-ring 1.2s var(--md-ease) infinite; }
+.avatar[data-state="thinking"] .avatar__pupil { transform: translate(4px, -5px); }
+.avatar[data-state="thinking"]::before { animation-duration: 1.2s; }
+.avatar[data-state="speaking"]::before { opacity: 0.85; }
+.avatar[data-state="alert"] { --ring-a: var(--md-error); --ring-b: #ffb4ab; }
+.avatar[data-state="alert"]::before { opacity: 1; animation: spin 1s linear infinite; }
+.avatar[data-state="alert"] .avatar__brow { transform: translateY(-5px); }
+
+@keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.1); } }
+@keyframes pulse-ring { 50% { inset: -18px; } }
+
+.call-list { list-style: none; padding: 0; display: grid; gap: var(--space-2); }
+.call-item {
+  display: flex; gap: var(--space-3); align-items: flex-start;
+  padding: var(--space-3) var(--space-4); border-radius: var(--md-radius-m); background: var(--md-surface);
+}
+.call-item--new { box-shadow: inset 4px 0 0 var(--md-primary); }
+.call-item__icon {
+  display: grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0;
+  border-radius: var(--md-radius-full); background: var(--md-secondary-container); color: var(--md-on-secondary-container);
+}
+.call-item__main { display: grid; gap: var(--space-1); min-width: 0; }
+.call-item__who { font-size: var(--md-label-m); font-weight: 500; color: var(--md-on-surface-variant); }
+.call-item__details { font-weight: 500; }
+.avatar__smile, .avatar__mouth { transition: opacity var(--md-fast) var(--md-ease); }
+.avatar:not([data-state="speaking"]) .avatar__mouth { opacity: 0; }
+.avatar[data-state="speaking"] .avatar__smile { opacity: 0; }
+.avatar[data-state="alert"] .avatar__smile, .avatar[data-state="thinking"] .avatar__smile { d: path("M86 130 Q100 126 114 130"); }

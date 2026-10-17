@@ -27,4 +27,11 @@ export const api = {
   schemes: (body) => post("/api/schemes", body),
   complaint: (body) => post("/api/complaint", body),
   speak: (body) => post("/api/speak", body),
+  copilot: {
+    get: () => request("/api/copilot/rider", { cache: "no-store" }),
+    update: (changes) =>
+      request("/api/copilot/rider", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(changes) }),
+    heard: (ids) => post("/api/copilot/messages/heard", { ids }),
+    ask: (body) => post("/api/copilot/ask", body),
+  },
 };

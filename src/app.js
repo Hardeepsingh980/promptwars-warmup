@@ -11,6 +11,8 @@ import * as schemes from "./features/schemes.js";
 import * as complaint from "./features/complaint.js";
 import * as speak from "./features/speak.js";
 import * as translate from "./features/translate.js";
+import { createCopilotRouter } from "./copilot/routes.js";
+import { createCopilotStore } from "./copilot/store.js";
 
 const PUBLIC_DIR = fileURLToPath(new URL("../public", import.meta.url));
 const SHARED_DIR = fileURLToPath(new URL("../shared", import.meta.url));
@@ -46,7 +48,7 @@ function featureRoute(feature, ai) {
  * Build the Express app. `ai` is the model client, injected so tests can use a fake.
  * It must have generateJson() and generateSpeech().
  */
-export function createApp({ ai, rateLimit = config.rateLimit } = {}) {
+export function createApp({ ai, rateLimit = config.rateLimit, copilotStore = createCopilotStore(), copilotToolKey = config.copilotToolKey } = {}) {
   const app = express();
   app.disable("x-powered-by");
   app.set("trust proxy", 1);
@@ -80,6 +82,7 @@ export function createApp({ ai, rateLimit = config.rateLimit } = {}) {
   api.post("/schemes", featureRoute(schemes, ai));
   api.post("/complaint", featureRoute(complaint, ai));
   api.post("/speak", featureRoute(speak, ai));
+  api.use("/copilot", createCopilotRouter({ ai, store: copilotStore, toolKey: copilotToolKey }));
   api.use((request, response) => response.status(404).json({ error: "Not found" }));
 
   app.use("/api", api);

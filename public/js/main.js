@@ -7,9 +7,10 @@ import * as ask from "./views/ask.js";
 import * as earnings from "./views/earnings.js";
 import * as benefits from "./views/benefits.js";
 import * as complaint from "./views/complaint.js";
+import * as copilot from "./views/copilot.js";
 
-const VIEWS = { ask, earnings, benefits, complaint };
-const DEFAULT_VIEW = "ask";
+const VIEWS = { copilot, ask, earnings, benefits, complaint };
+const DEFAULT_VIEW = "copilot";
 
 let meta;
 let language = store.getLanguage() ?? "en";
@@ -64,6 +65,7 @@ async function setLanguage(code) {
   }
   applyStrings();
   fillSelects();
+  document.dispatchEvent(new CustomEvent("haqdar:language", { detail: code }));
 }
 
 function buildLanguageDialog() {
@@ -91,12 +93,13 @@ async function start() {
     return;
   }
   buildLanguageDialog();
-  await setLanguage(language);
+  fillSelects();
   for (const view of Object.values(VIEWS)) view.init(context);
-
   window.addEventListener("hashchange", () => navigate(location.hash.slice(1)));
   navigate(location.hash.slice(1) || DEFAULT_VIEW);
   if (firstVisit) $("#lang-dialog").showModal();
+  // Draw the screens first, then switch the text when the translation arrives.
+  await setLanguage(language);
 }
 
 start();

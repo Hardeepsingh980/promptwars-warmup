@@ -30,6 +30,15 @@ function browserSpeak(text, language, button) {
   window.speechSynthesis.speak(utterance);
 }
 
+/** Fetch Gemini speech for `text` and return a playable data URL. */
+export async function speechUrl(text, language) {
+  const audio = await api.speak({ text: text.slice(0, 1200), language });
+  return `data:${audio.mimeType};base64,${audio.data}`;
+}
+
+/** Stop any read-aloud button that is playing. */
+export const stopReading = () => stop();
+
 /** Create a button that reads `getText()` aloud in `getLanguage()`. */
 export function speakButton(getText, getLanguage) {
   const button = h("button", { class: "btn btn--tonal btn--sm", type: "button", "aria-pressed": "false" });
@@ -42,7 +51,7 @@ export function speakButton(getText, getLanguage) {
 
     activeButton = button;
     setPlaying(button, true);
-    const text = getText().slice(0, 700);
+    const text = getText().slice(0, 1200);
     const language = getLanguage();
     try {
       const audio = await api.speak({ text, language });

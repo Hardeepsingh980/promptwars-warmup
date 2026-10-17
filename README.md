@@ -4,6 +4,18 @@ Haqdar ("the rightful claimant" in Hindi and Urdu) is a Gemini-powered helper fo
 
 Live app: https://haqdar-945707801757.asia-south1.run.app
 
+## Saathi, the riding co-pilot
+
+Riders get customer calls while they drive. Answering is unsafe, and a missed call can bring a penalty. Saathi fixes this:
+
+1. The rider forwards missed and busy calls to +91 80314 50668 by dialing `**61*+918031450668#` and `**67*+918031450668#` once.
+2. A Cheerio AI voice agent answers in Hindi or the caller's language. At the start of each call, it reads the rider's name, status, and order ETA from `GET /api/copilot/status`.
+3. When the call ends, Cheerio sends the call record to `POST /api/copilot/call-ended`. Gemini pulls out who called, why, the exact details (gate code, landmark), the urgency, and scam signs, and writes a spoken message in the rider's language.
+4. An animated avatar face on the Co-pilot screen speaks urgent calls at once. It saves the rest and reads them aloud when the rider taps "I have stopped". Its lips move with the real Gemini voice.
+5. The rider can talk to Saathi hands-free, for example "traffic, I will reach in 20 minutes". Gemini picks an action and the server updates the ETA, so the next caller hears the new time.
+
+Both phone endpoints need the `X-Copilot-Key` header. Caller numbers are masked, and the phone agent never sees messages or earnings. To test, call +91 80314 50668 from any phone, then open the Co-pilot screen.
+
 ## What a worker can do
 
 1. Ask: take a photo of an app screen, a fine, or any paper, or speak or type a question. Gemini explains it in the worker's language, warns about scams, and gives next steps.
@@ -16,11 +28,11 @@ Each screen can read its answer aloud with Gemini text to speech. The whole inte
 ## Run it
 
 1. Install Node.js 22.9 or later.
-2. Copy `.env.example` to `.env` and put your Gemini API key in it.
+2. Copy `.env.example` to `.env`. Put your Gemini API key in it, and set `COPILOT_TOOL_KEY` to a long random value.
 3. Run `npm install`.
 4. Run `npm start`, then open http://localhost:3000.
 
-Run `npm test` to run the 27 unit and API tests. The tests use a fake model, so they need no key.
+Run `npm test` to run the 35 unit and API tests. The tests use a fake model, so they need no key.
 
 There is no login. Evaluators do not need test credentials.
 
