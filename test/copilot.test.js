@@ -80,6 +80,8 @@ test("POST /call-ended/:token needs the URL token, saves a masked message for th
   server.ai.reply = () => callMessage;
   const c = server.client();
   assert.equal((await c.call("/api/copilot/call-ended/wrong-token", { method: "POST", body: {} })).status, 404);
+  assert.equal((await c.call("/api/copilot/call-ended", { method: "POST", body: {} })).status, 404, "no token at all");
+  assert.equal((await c.call(`/api/copilot/call-ended?token=${SECRETS.copilotWebhookToken}`, { method: "POST", body: { call: { transcript: "user: hi" } } })).status, 200, "query token works too");
   const payload = { call: { from: "+919876543210", transcript: [{ role: "user", content: "Gate code 4521" }] } };
   const ok = await c.json(`/api/copilot/call-ended/${SECRETS.copilotWebhookToken}`, { method: "POST", body: payload });
   assert.equal(ok.status, 200);

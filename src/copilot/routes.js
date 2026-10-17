@@ -138,8 +138,10 @@ export function createCopilotRouter({ ai, users, copilot, earnings, toolKey, web
     response.json(publicStatus(user, user ? copilot.getRider(user.id) : { status: "offline", order: null }));
   });
 
-  router.post("/call-ended/:token", express.urlencoded({ extended: true, limit: "1mb" }), async (request, response) => {
-    if (!tokenMatches(request.params.token, webhookToken)) return response.status(404).json({ error: "Not found" });
+  // The token can be the last path segment or a ?token= query, whichever the sender's settings allow.
+  router.post(["/call-ended/:token", "/call-ended"], express.urlencoded({ extended: true, limit: "1mb" }), async (request, response) => {
+    const sent = request.params.token ?? request.query.token;
+    if (!tokenMatches(sent, webhookToken)) return response.status(404).json({ error: "Not found" });
     const user = lineOwner();
     if (!user) return response.json({ ok: false, reason: "No rider is on this line right now" });
     const message = await recordCall({ ai, copilot, user, payload: request.body ?? {} });
