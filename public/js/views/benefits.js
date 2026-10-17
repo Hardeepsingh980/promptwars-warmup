@@ -17,23 +17,29 @@ export function init(context) {
 }
 
 /** Fill the form from the saved profile. Estimate monthly income from the log if it is empty. */
-export function enter() {
+export async function enter() {
   const form = $("#ben-form");
+  const user = app.user();
   const profile = store.getProfile();
-  if (profile.state) form.state.value = profile.state;
-  if (profile.workType) form.workType.value = profile.workType;
+  form.state.value = user.state || profile.state || "";
+  form.workType.value = user.workType || profile.workType || "delivery";
   if (profile.age) form.age.value = profile.age;
 
   const help = $("#ben-income-help");
   help.hidden = true;
   if (profile.monthlyIncome !== undefined) {
     form.monthlyIncome.value = profile.monthlyIncome;
-  } else {
-    const week = summarizeLog(store.getLog());
+    return;
+  }
+  try {
+    const { entries } = await api.earnings.list();
+    const week = summarizeLog(entries);
     if (week.count > 0) {
       form.monthlyIncome.value = Math.round((week.total / week.days) * DAYS_PER_MONTH);
       help.hidden = false;
     }
+  } catch {
+    // The rider can type the income.
   }
 }
 

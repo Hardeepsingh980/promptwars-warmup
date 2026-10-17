@@ -1,32 +1,19 @@
 import { test, before, after, beforeEach } from "node:test";
 import assert from "node:assert/strict";
-import { createApp } from "../src/app.js";
 import { clearCache } from "../src/features/fairpay.js";
-
-/**
- * A fake model client. Each test sets `reply` to the JSON the model returns.
- * `calls` records every request so tests can check what the server sent.
- */
-const fakeAi = {
-  reply: () => ({}),
-  calls: [],
-  async generateJson(request) {
-    this.calls.push(request);
-    return this.reply(request);
-  },
-  async generateSpeech(text) {
-    this.calls.push({ text });
-    return { mimeType: "audio/wav", data: "UklGRg==" };
-  },
-};
+import { startTestServer } from "./helpers.js";
 
 let server;
+let fakeAi;
+let user;
 let baseUrl;
 
 before(async () => {
-  const app = createApp({ ai: fakeAi, rateLimit: { windowMs: 60_000, max: 1000 } });
-  await new Promise((resolve) => { server = app.listen(0, resolve); });
-  baseUrl = `http://127.0.0.1:${server.address().port}`;
+  server = await startTestServer();
+  fakeAi = server.ai;
+  baseUrl = server.baseUrl;
+  user = server.client();
+  await user.signup({ name: "Tester", phone: "9000000001", password: "tester123" });
 });
 after(() => server.close());
 beforeEach(() => {
@@ -34,8 +21,7 @@ beforeEach(() => {
   clearCache();
 });
 
-const post = (path, body) =>
-  fetch(baseUrl + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+const post = (path, body) => user.call(path, { method: "POST", body });
 
 test("GET /api/meta lists languages, states, and helplines", async () => {
   const response = await fetch(baseUrl + "/api/meta");
@@ -47,7 +33,7 @@ test("GET /api/meta lists languages, states, and helplines", async () => {
 });
 
 test("responses carry security headers", async () => {
-  const response = await fetch(baseUrl + "/healthz");
+  const response = await fetch(baseUrl + "/health");
   assert.match(response.headers.get("content-security-policy"), /default-src 'self'/);
   assert.equal(response.headers.get("x-content-type-options"), "nosniff");
   assert.equal(response.headers.get("x-powered-by"), null);
@@ -138,14 +124,14 @@ test("POST /api/speak returns audio", async () => {
 test("bad JSON returns 400 and unknown API paths return 404", async () => {
   const bad = await fetch(baseUrl + "/api/understand", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{oops" });
   assert.equal(bad.status, 400);
-  const missing = await fetch(baseUrl + "/api/nope");
+  const missing = await user.call("/api/nope");
   assert.equal(missing.status, 404);
+  assert.equal((await fetch(baseUrl + "/api/nope")).status, 401, "unknown paths need a login too, so they reveal nothing");
 });
 
 test("the API returns 429 when a client sends too many requests", async () => {
-  const app = createApp({ ai: fakeAi, rateLimit: { windowMs: 60_000, max: 1 } });
-  const limited = await new Promise((resolve) => { const s = app.listen(0, () => resolve(s)); });
-  const url = `http://127.0.0.1:${limited.address().port}/api/meta`;
+  const limited = await startTestServer({ rateLimit: { windowMs: 60_000, max: 1 } });
+  const url = `${limited.baseUrl}/api/meta`;
   assert.equal((await fetch(url)).status, 200);
   assert.equal((await fetch(url)).status, 429);
   limited.close();
@@ -153,7 +139,7 @@ test("the API returns 429 when a client sends too many requests", async () => {
 
 test("GET /api/strings returns English with no model call and validates the language", async () => {
   const english = await (await fetch(baseUrl + "/api/strings?language=en")).json();
-  assert.equal(english.strings.nav_ask, "Ask");
+  assert.equal(english.strings.nav_home, "Home", "strings are public, the login screen needs them");
   assert.equal(fakeAi.calls.length, 0);
   assert.equal((await fetch(baseUrl + "/api/strings?language=zz")).status, 400);
 });
@@ -164,7 +150,7 @@ test("GET /api/strings shares one model call between requests for the same langu
     fetch(baseUrl + "/api/strings?language=ta").then((response) => response.json()),
     fetch(baseUrl + "/api/strings?language=ta").then((response) => response.json()),
   ]);
-  assert.equal(first.strings.nav_ask, "ta:nav_ask");
+  assert.equal(first.strings.nav_home, "ta:nav_home");
   assert.deepEqual(first, second);
   assert.equal(fakeAi.calls.length, 1);
 });

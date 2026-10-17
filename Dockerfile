@@ -13,6 +13,10 @@ COPY src ./src
 COPY shared ./shared
 COPY public ./public
 
+# The JSON database lives here. On Cloud Run this path is a Cloud Storage volume.
+ENV DATA_FILE=/data/haqdar.json
+RUN mkdir -p /data && chown node:node /data
+
 # Run as the unprivileged user that the Node image provides.
 USER node
 

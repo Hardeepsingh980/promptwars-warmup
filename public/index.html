@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="hi">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#6750A4">
-  <meta name="description" content="Haqdar helps gig and daily-wage workers understand pay, rights, and benefits in their own language.">
+  <meta name="description" content="Haqdar: Saathi, a voice co-pilot for gig workers. It answers your calls while you ride and helps with pay, rights, and complaints in your language.">
   <title>Haqdar</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,110 +27,177 @@
         <span class="brand__tagline" data-i18n="tagline"></span>
       </span>
     </div>
-    <button id="lang-button" class="btn btn--tonal btn--sm" type="button" aria-haspopup="dialog" aria-controls="lang-dialog">
-      <span class="icon" aria-hidden="true">translate</span>
-      <span id="lang-current">English</span>
-      <span class="visually-hidden" data-i18n="lang_button"></span>
-    </button>
+    <div class="row">
+      <button id="lang-button" class="btn btn--tonal btn--sm" type="button" aria-haspopup="dialog" aria-controls="lang-dialog">
+        <span class="icon" aria-hidden="true">translate</span>
+        <span id="lang-current">हिन्दी</span>
+        <span class="visually-hidden" data-i18n="lang_button"></span>
+      </button>
+      <button id="account" class="account" type="button" aria-haspopup="dialog" aria-controls="menu-dialog" hidden>
+        <span id="account-initial" aria-hidden="true">?</span>
+        <span class="visually-hidden" data-i18n="menu_title"></span>
+      </button>
+    </div>
   </header>
 
   <main id="main" tabindex="-1">
-    <!-- Co-pilot: Saathi answers calls while the rider rides and briefs them at the next stop. -->
-    <section id="view-copilot" class="view" aria-labelledby="cp-title" data-view="copilot" hidden>
-      <div class="hero hero--copilot">
-        <div id="cp-avatar" class="avatar" data-state="idle"></div>
-        <h1 id="cp-title" data-i18n="cp_title"></h1>
-        <p class="cp-hint" data-i18n="cp_hint"></p>
-        <p id="cp-status" class="cp-status" role="status" aria-live="polite"></p>
+    <!-- Login -->
+    <section class="view view--narrow" data-view="login" aria-labelledby="login-title" hidden>
+      <form id="login-form" class="card stack" autocomplete="on">
+        <div><h1 id="login-title" data-i18n="login_title"></h1><p class="card__hint" data-i18n="login_hint"></p></div>
+        <div class="field"><label for="login-phone" data-i18n="f_phone"></label><input id="login-phone" name="phone" class="field__control" type="tel" inputmode="numeric" autocomplete="tel-national" required></div>
+        <div class="field"><label for="login-password" data-i18n="f_password"></label><input id="login-password" name="password" class="field__control" type="password" autocomplete="current-password" required></div>
+        <p class="form-error banner" role="alert" hidden></p>
+        <button class="btn btn--filled btn--block btn--large" type="submit"><span class="icon" aria-hidden="true">login</span><span data-i18n="login_button"></span></button>
+        <p class="card__hint"><span data-i18n="login_no_account"></span> <a href="#signup" data-i18n="signup_link"></a></p>
+        <p class="field__help" data-i18n="demo_hint"></p>
+      </form>
+    </section>
+
+    <!-- Signup -->
+    <section class="view view--narrow" data-view="signup" aria-labelledby="signup-title" hidden>
+      <form id="signup-form" class="card stack" autocomplete="on">
+        <div><h1 id="signup-title" data-i18n="signup_title"></h1><p class="card__hint" data-i18n="signup_hint"></p></div>
+        <div class="field"><label for="signup-name" data-i18n="f_name"></label><input id="signup-name" name="name" class="field__control" type="text" maxlength="40" autocomplete="given-name" required></div>
+        <div class="field"><label for="signup-phone" data-i18n="f_phone"></label><input id="signup-phone" name="phone" class="field__control" type="tel" inputmode="numeric" autocomplete="tel-national" required></div>
+        <div class="field"><label for="signup-password" data-i18n="f_password"></label><input id="signup-password" name="password" class="field__control" type="password" minlength="6" autocomplete="new-password" required></div>
+        <div class="field"><span class="field__label" data-i18n="f_language"></span><div id="signup-languages" class="chips" role="radiogroup"></div></div>
+        <p class="form-error banner" role="alert" hidden></p>
+        <button class="btn btn--filled btn--block btn--large" type="submit"><span class="icon" aria-hidden="true">person_add</span><span data-i18n="signup_button"></span></button>
+        <p class="card__hint"><span data-i18n="signup_has_account"></span> <a href="#login" data-i18n="login_link"></a></p>
+      </form>
+    </section>
+
+    <!-- Setup -->
+    <section class="view view--narrow" data-view="setup" aria-labelledby="setup-title" hidden>
+      <form id="setup-form" class="card stack" novalidate>
+        <div><h1 id="setup-title" data-i18n="setup_title"></h1><p class="card__hint" data-i18n="setup_hint"></p></div>
+        <div class="field"><label for="setup-state" data-i18n="f_state"></label><select id="setup-state" name="state" class="field__control" data-states required></select></div>
+        <div class="field"><label for="setup-work" data-i18n="f_work"></label><select id="setup-work" name="workType" class="field__control" data-work-types></select></div>
+        <div class="field"><label for="setup-platform" data-i18n="f_platform"></label><input id="setup-platform" name="platform" class="field__control" type="text" maxlength="40" placeholder="Swiggy, Zomato, Uber…"></div>
+        <p class="form-error banner" role="alert" hidden></p>
+        <button class="btn btn--filled btn--block btn--large" type="submit"><span data-i18n="setup_button"></span><span class="icon" aria-hidden="true">arrow_forward</span></button>
+      </form>
+    </section>
+
+    <!-- Welcome: meet Saathi -->
+    <section class="view" data-view="welcome" aria-labelledby="welcome-title" hidden>
+      <div class="hero hero--stage">
+        <div id="welcome-stage" class="stage" data-state="happy"></div>
+        <h1 id="welcome-title" data-i18n="welcome_title"></h1>
+        <p data-i18n="welcome_hint"></p>
+        <div id="welcome-captions" class="captions" aria-live="polite"></div>
+        <button id="welcome-meet" class="btn btn--filled btn--large btn--block" type="button"><span class="icon" aria-hidden="true">waving_hand</span><span data-i18n="welcome_meet"></span></button>
+      </div>
+      <section id="welcome-step-2" class="card stack" hidden>
+        <h2 data-i18n="welcome_step_call"></h2>
+        <p class="card__hint" data-i18n="welcome_step_call_hint"></p>
+        <button id="welcome-sample" class="btn btn--tonal btn--large" type="button"><span class="icon" aria-hidden="true">ring_volume</span><span data-i18n="welcome_sample_button"></span></button>
+        <p id="welcome-sample-done" class="banner banner--info" hidden><span class="icon" aria-hidden="true">check_circle</span><span data-i18n="welcome_sample_done"></span></p>
+      </section>
+      <section id="welcome-step-3" class="card stack" hidden>
+        <h2 data-i18n="welcome_step_forward"></h2>
+        <div id="welcome-forwarding"></div>
+      </section>
+      <div class="row">
+        <button id="welcome-finish" class="btn btn--filled btn--large" type="button"><span class="icon" aria-hidden="true">rocket_launch</span><span data-i18n="welcome_finish"></span></button>
+        <button id="welcome-skip" class="btn btn--text" type="button" data-i18n="welcome_skip"></button>
+      </div>
+    </section>
+
+    <!-- Home: Saathi live, ride switch, calls, order -->
+    <section class="view" data-view="home" aria-labelledby="home-status" hidden>
+      <div class="hero hero--stage">
+        <div id="home-stage" class="stage" data-state="idle"></div>
+        <h1 id="home-status" class="cp-status" role="status" aria-live="polite"></h1>
+        <div id="home-captions" class="captions" aria-live="polite"></div>
         <div class="hero__actions">
-          <button id="cp-toggle" class="btn btn--filled btn--large" type="button" aria-pressed="false"></button>
-          <button id="cp-talk" class="btn btn--tertiary btn--large" type="button" aria-pressed="false">
-            <span class="icon" aria-hidden="true">mic</span><span id="cp-talk-label" data-i18n="cp_talk"></span>
-          </button>
+          <button id="home-live" class="btn btn--tertiary btn--large" type="button" aria-pressed="false"></button>
+          <button id="home-ride" class="btn btn--filled btn--large" type="button" aria-pressed="false"></button>
         </div>
-        <p id="cp-listening" class="banner banner--info" role="status" hidden>
-          <span class="icon" aria-hidden="true">graphic_eq</span><span data-i18n="cp_listening"></span>
-        </p>
-        <p id="cp-reply" class="result__transcript" aria-live="polite" hidden></p>
-        <form id="cp-ask-form" class="compose" autocomplete="off">
-          <div class="field">
-            <label for="cp-ask-text" data-i18n="cp_type_label"></label>
-            <input id="cp-ask-text" class="field__control" type="text" maxlength="500" enterkeyhint="send">
-          </div>
+        <p id="home-live-hint" class="banner banner--info" role="status" hidden><span class="icon" aria-hidden="true">graphic_eq</span><span data-i18n="home_live_on"></span></p>
+        <form id="home-type-form" class="compose" autocomplete="off">
+          <div class="field"><label for="home-type" data-i18n="home_type"></label><input id="home-type" class="field__control" type="text" maxlength="500" enterkeyhint="send"></div>
           <button class="btn btn--filled btn--icon" type="submit" data-i18n-aria="ask_send"><span class="icon" aria-hidden="true">send</span></button>
         </form>
       </div>
 
-      <section class="card stack" aria-labelledby="cp-calls-title">
-        <div class="card__head">
-          <h2 id="cp-calls-title" data-i18n="cp_calls_title"></h2>
-          <span id="cp-new" class="verdict verdict--low" hidden></span>
-        </div>
-        <ul id="cp-list" class="call-list"></ul>
-        <button id="cp-play" class="btn btn--tonal" type="button"><span class="icon" aria-hidden="true">play_circle</span><span data-i18n="cp_play"></span></button>
+      <section class="card stack" aria-labelledby="home-calls-title">
+        <div class="card__head"><h2 id="home-calls-title" data-i18n="cp_calls_title"></h2><span id="home-new" class="verdict verdict--low" hidden></span></div>
+        <ul id="home-list" class="call-list"></ul>
+        <button id="home-play" class="btn btn--tonal" type="button"><span class="icon" aria-hidden="true">play_circle</span><span data-i18n="cp_play"></span></button>
       </section>
 
-      <form id="cp-order-form" class="card stack" novalidate>
-        <div>
-          <h2 data-i18n="cp_order_title"></h2>
-          <p class="card__hint" data-i18n="cp_order_hint"></p>
-        </div>
+      <form id="order-form" class="card stack" novalidate>
+        <div><h2 data-i18n="cp_order_title"></h2><p class="card__hint" data-i18n="cp_order_hint"></p></div>
         <div class="grid-2">
-          <div class="field"><label for="cp-name" data-i18n="f_name"></label><input id="cp-name" name="riderName" class="field__control" type="text" maxlength="40" autocomplete="given-name"></div>
-          <div class="field"><label for="cp-platform" data-i18n="f_platform"></label><input id="cp-platform" name="platform" class="field__control" type="text" maxlength="40"></div>
-          <div class="field"><label for="cp-area" data-i18n="f_area"></label><input id="cp-area" name="customerArea" class="field__control" type="text" maxlength="80"></div>
-          <div class="field"><label for="cp-eta" data-i18n="f_eta"></label><input id="cp-eta" name="etaMinutes" class="field__control" type="number" inputmode="numeric" min="0" max="240"></div>
+          <div class="field"><label for="order-platform" data-i18n="f_platform"></label><input id="order-platform" name="platform" class="field__control" type="text" maxlength="40"></div>
+          <div class="field"><label for="order-area" data-i18n="f_area"></label><input id="order-area" name="customerArea" class="field__control" type="text" maxlength="80"></div>
+          <div class="field"><label for="order-eta" data-i18n="f_eta"></label><input id="order-eta" name="etaMinutes" class="field__control" type="number" inputmode="numeric" min="0" max="240"></div>
         </div>
         <div class="row">
           <button class="btn btn--filled" type="submit"><span class="icon" aria-hidden="true">save</span><span data-i18n="cp_save"></span></button>
-          <button id="cp-delivered" class="btn btn--outlined" type="button"><span class="icon" aria-hidden="true">task_alt</span><span data-i18n="cp_delivered"></span></button>
+          <button id="order-delivered" class="btn btn--outlined" type="button"><span class="icon" aria-hidden="true">task_alt</span><span data-i18n="cp_delivered"></span></button>
         </div>
       </form>
-
-      <section class="card stack" aria-labelledby="cp-setup-title">
-        <h2 id="cp-setup-title" data-i18n="cp_setup_title"></h2>
-        <p class="card__hint" data-i18n="cp_setup_hint"></p>
-        <div class="chips" lang="en">
-          <a class="chip" href="tel:**61*+918031450668%23"><span class="icon" aria-hidden="true">dialpad</span>**61*+918031450668#</a>
-          <a class="chip" href="tel:**67*+918031450668%23"><span class="icon" aria-hidden="true">dialpad</span>**67*+918031450668#</a>
-        </div>
-        <p class="field__help" data-i18n="cp_setup_off"></p>
-        <p data-i18n="cp_setup_test"></p>
-        <a class="btn btn--outlined" href="tel:+918031450668"><span class="icon" aria-hidden="true">call</span>+91 80314 50668</a>
-      </section>
     </section>
 
-    <!-- Ask: the home screen. Photo, voice, or text in. Explanation and next steps out. -->
-    <section id="view-ask" class="view" aria-labelledby="ask-title" data-view="ask" hidden>
+    <!-- Money -->
+    <section class="view" data-view="money" aria-labelledby="earn-title" hidden>
+      <form id="earn-form" class="card stack" novalidate>
+        <div><h1 id="earn-title" data-i18n="earn_title"></h1><p class="card__hint" data-i18n="earn_hint"></p></div>
+        <div class="grid-2">
+          <div class="field"><label for="earn-earnings" data-i18n="f_earnings"></label><input id="earn-earnings" name="earnings" class="field__control" type="number" inputmode="decimal" min="0" step="any" required></div>
+          <div class="field"><label for="earn-hours" data-i18n="f_hours"></label><input id="earn-hours" name="hours" class="field__control" type="number" inputmode="decimal" min="0.25" max="24" step="any" required></div>
+          <div class="field"><label for="earn-fuel" data-i18n="f_fuel"></label><input id="earn-fuel" name="fuel" class="field__control" type="number" inputmode="decimal" min="0" step="any" value="0"></div>
+          <div class="field"><label for="earn-other" data-i18n="f_other"></label><input id="earn-other" name="other" class="field__control" type="number" inputmode="decimal" min="0" step="any" value="0"></div>
+          <div class="field"><label for="earn-platform" data-i18n="f_platform"></label><input id="earn-platform" name="platform" class="field__control" type="text" maxlength="40"></div>
+          <div class="field"><label for="earn-date" data-i18n="f_date"></label><input id="earn-date" name="date" class="field__control" type="date" required></div>
+          <div class="field"><label for="earn-state" data-i18n="f_state"></label><select id="earn-state" name="state" class="field__control" data-states required></select></div>
+          <div class="field"><label for="earn-work" data-i18n="f_work"></label><select id="earn-work" name="workType" class="field__control" data-work-types></select></div>
+        </div>
+        <button class="btn btn--filled btn--block" type="submit"><span class="icon" aria-hidden="true">balance</span><span data-i18n="earn_save"></span></button>
+      </form>
+      <div id="earn-result" class="result" tabindex="-1" aria-live="polite"></div>
+      <section class="card stack" aria-labelledby="week-title"><h2 id="week-title" data-i18n="week_title"></h2><div id="week-summary"></div></section>
+    </section>
+
+    <!-- Help hub -->
+    <section class="view" data-view="help" aria-labelledby="help-title" hidden>
+      <h1 id="help-title" data-i18n="help_title"></h1>
+      <div id="help-hub" class="stack">
+        <button class="card card--interactive help-card" type="button" data-open="ask">
+          <span class="help-card__icon"><span class="icon" aria-hidden="true">photo_camera</span></span>
+          <span class="help-card__text"><span class="help-card__title" data-i18n="help_ask"></span><span class="card__hint" data-i18n="help_ask_hint"></span></span>
+          <span class="icon" aria-hidden="true">chevron_right</span>
+        </button>
+        <button class="card card--interactive help-card" type="button" data-open="benefits">
+          <span class="help-card__icon"><span class="icon" aria-hidden="true">volunteer_activism</span></span>
+          <span class="help-card__text"><span class="help-card__title" data-i18n="help_benefits"></span><span class="card__hint" data-i18n="help_benefits_hint"></span></span>
+          <span class="icon" aria-hidden="true">chevron_right</span>
+        </button>
+        <button class="card card--interactive help-card" type="button" data-open="complaint">
+          <span class="help-card__icon"><span class="icon" aria-hidden="true">campaign</span></span>
+          <span class="help-card__text"><span class="help-card__title" data-i18n="help_complaint"></span><span class="card__hint" data-i18n="help_complaint_hint"></span></span>
+          <span class="icon" aria-hidden="true">chevron_right</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Ask: explain a photo or a message -->
+    <section class="view" data-view="ask" aria-labelledby="ask-title" hidden>
+      <button class="btn btn--text" type="button" data-back><span class="icon" aria-hidden="true">arrow_back</span><span data-i18n="back"></span></button>
       <div class="hero">
         <h1 id="ask-title" data-i18n="ask_title"></h1>
         <p data-i18n="ask_hint"></p>
-        <div class="hero__actions">
-          <label class="btn btn--filled btn--large" for="ask-photo-input">
-            <span class="icon" aria-hidden="true">photo_camera</span>
-            <span data-i18n="ask_photo"></span>
-          </label>
-          <input id="ask-photo-input" class="visually-hidden" type="file" accept="image/*" capture="environment">
-          <button id="ask-mic" class="btn btn--tertiary btn--large" type="button" aria-pressed="false">
-            <span class="icon" aria-hidden="true">mic</span>
-            <span id="ask-mic-label" data-i18n="ask_speak"></span>
-          </button>
-        </div>
-        <p id="ask-recording" class="banner banner--info" role="status" hidden>
-          <span class="icon" aria-hidden="true">graphic_eq</span><span data-i18n="ask_recording"></span>
-        </p>
+        <label class="btn btn--filled btn--large btn--block" for="ask-photo-input"><span class="icon" aria-hidden="true">photo_camera</span><span data-i18n="ask_photo"></span></label>
+        <input id="ask-photo-input" class="visually-hidden" type="file" accept="image/*" capture="environment">
         <form id="ask-form" class="compose" autocomplete="off">
-          <div class="field">
-            <label for="ask-text" data-i18n="ask_type_label"></label>
-            <input id="ask-text" class="field__control" type="text" maxlength="2000" enterkeyhint="send">
-          </div>
-          <button class="btn btn--filled btn--icon" type="submit" data-i18n-aria="ask_send">
-            <span class="icon" aria-hidden="true">send</span>
-          </button>
+          <div class="field"><label for="ask-text" data-i18n="ask_type_label"></label><input id="ask-text" class="field__control" type="text" maxlength="2000" enterkeyhint="send"></div>
+          <button class="btn btn--filled btn--icon" type="submit" data-i18n-aria="ask_send"><span class="icon" aria-hidden="true">send</span></button>
         </form>
       </div>
-
-      <div class="stack stack--tight" id="ask-examples">
+      <div class="stack stack--tight">
         <p class="card__section-title" data-i18n="ask_try"></p>
         <div class="chips">
           <button class="chip" type="button" data-example="ex_1"><span class="icon" aria-hidden="true">payments</span><span data-i18n="ex_1"></span></button>
@@ -138,47 +205,14 @@
           <button class="chip" type="button" data-example="ex_3"><span class="icon" aria-hidden="true">badge</span><span data-i18n="ex_3"></span></button>
         </div>
       </div>
-
       <div id="ask-result" class="result" tabindex="-1" aria-live="polite"></div>
     </section>
 
-    <!-- Earnings: log a day, check fair pay, see the week. -->
-    <section id="view-earnings" class="view" aria-labelledby="earn-title" data-view="earnings" hidden>
-      <form id="earn-form" class="card stack" novalidate>
-        <div>
-          <h1 id="earn-title" data-i18n="earn_title"></h1>
-          <p class="card__hint" data-i18n="earn_hint"></p>
-        </div>
-        <div class="grid-2">
-          <div class="field"><label for="earn-earnings" data-i18n="f_earnings"></label><input id="earn-earnings" name="earnings" class="field__control" type="number" inputmode="decimal" min="0" step="any" required></div>
-          <div class="field"><label for="earn-hours" data-i18n="f_hours"></label><input id="earn-hours" name="hours" class="field__control" type="number" inputmode="decimal" min="0.25" max="24" step="any" required></div>
-          <div class="field"><label for="earn-fuel" data-i18n="f_fuel"></label><input id="earn-fuel" name="fuel" class="field__control" type="number" inputmode="decimal" min="0" step="any" value="0"></div>
-          <div class="field"><label for="earn-other" data-i18n="f_other"></label><input id="earn-other" name="other" class="field__control" type="number" inputmode="decimal" min="0" step="any" value="0"></div>
-          <div class="field"><label for="earn-platform" data-i18n="f_platform"></label><input id="earn-platform" name="platform" class="field__control" type="text" maxlength="60"></div>
-          <div class="field"><label for="earn-date" data-i18n="f_date"></label><input id="earn-date" name="date" class="field__control" type="date" required></div>
-          <div class="field"><label for="earn-state" data-i18n="f_state"></label><select id="earn-state" name="state" class="field__control" data-states required></select></div>
-          <div class="field"><label for="earn-work" data-i18n="f_work"></label><select id="earn-work" name="workType" class="field__control" data-work-types></select></div>
-        </div>
-        <button class="btn btn--filled btn--block" type="submit">
-          <span class="icon" aria-hidden="true">balance</span><span data-i18n="earn_save"></span>
-        </button>
-      </form>
-
-      <div id="earn-result" class="result" tabindex="-1" aria-live="polite"></div>
-
-      <section class="card stack" aria-labelledby="week-title">
-        <h2 id="week-title" data-i18n="week_title"></h2>
-        <div id="week-summary"></div>
-      </section>
-    </section>
-
-    <!-- Benefits: schemes and laws that fit the worker. -->
-    <section id="view-benefits" class="view" aria-labelledby="ben-title" data-view="benefits" hidden>
+    <!-- Benefits -->
+    <section class="view" data-view="benefits" aria-labelledby="ben-title" hidden>
+      <button class="btn btn--text" type="button" data-back><span class="icon" aria-hidden="true">arrow_back</span><span data-i18n="back"></span></button>
       <form id="ben-form" class="card stack" novalidate>
-        <div>
-          <h1 id="ben-title" data-i18n="ben_title"></h1>
-          <p class="card__hint" data-i18n="ben_hint"></p>
-        </div>
+        <div><h1 id="ben-title" data-i18n="ben_title"></h1><p class="card__hint" data-i18n="ben_hint"></p></div>
         <div class="grid-2">
           <div class="field"><label for="ben-state" data-i18n="f_state"></label><select id="ben-state" name="state" class="field__control" data-states required></select></div>
           <div class="field"><label for="ben-work" data-i18n="f_work"></label><select id="ben-work" name="workType" class="field__control" data-work-types></select></div>
@@ -189,66 +223,61 @@
             <p id="ben-income-help" class="field__help" data-i18n="ben_from_log" hidden></p>
           </div>
         </div>
-        <button class="btn btn--filled btn--block" type="submit">
-          <span class="icon" aria-hidden="true">volunteer_activism</span><span data-i18n="ben_submit"></span>
-        </button>
+        <button class="btn btn--filled btn--block" type="submit"><span class="icon" aria-hidden="true">volunteer_activism</span><span data-i18n="ben_submit"></span></button>
       </form>
-
       <div id="ben-result" class="result stack" tabindex="-1" aria-live="polite"></div>
-
-      <section class="card stack" aria-labelledby="help-title">
-        <h2 id="help-title" data-i18n="help_title"></h2>
-        <div id="helplines" class="chips"></div>
-      </section>
+      <section class="card stack" aria-labelledby="help-lines-title"><h2 id="help-lines-title" data-i18n="help_lines_title"></h2><div id="helplines" class="chips"></div></section>
     </section>
 
-    <!-- Complaint: a formal letter from a description or a screenshot. -->
-    <section id="view-complaint" class="view" aria-labelledby="cmp-title" data-view="complaint" hidden>
+    <!-- Complaint -->
+    <section class="view" data-view="complaint" aria-labelledby="cmp-title" hidden>
+      <button class="btn btn--text" type="button" data-back><span class="icon" aria-hidden="true">arrow_back</span><span data-i18n="back"></span></button>
       <form id="cmp-form" class="card stack" novalidate>
-        <div>
-          <h1 id="cmp-title" data-i18n="cmp_title"></h1>
-          <p class="card__hint" data-i18n="cmp_hint"></p>
-        </div>
+        <div><h1 id="cmp-title" data-i18n="cmp_title"></h1><p class="card__hint" data-i18n="cmp_hint"></p></div>
         <div class="field"><label for="cmp-problem" data-i18n="f_problem"></label><textarea id="cmp-problem" name="problem" class="field__control" maxlength="2000"></textarea></div>
         <div class="grid-2">
           <div class="field"><label for="cmp-platform" data-i18n="f_platform"></label><input id="cmp-platform" name="platform" class="field__control" type="text" maxlength="60"></div>
           <div class="field"><label for="cmp-city" data-i18n="f_city"></label><input id="cmp-city" name="city" class="field__control" type="text" maxlength="60"></div>
         </div>
         <div class="row">
-          <label class="btn btn--outlined" for="cmp-photo-input">
-            <span class="icon" aria-hidden="true">add_photo_alternate</span><span data-i18n="cmp_photo"></span>
-          </label>
+          <label class="btn btn--outlined" for="cmp-photo-input"><span class="icon" aria-hidden="true">add_photo_alternate</span><span data-i18n="cmp_photo"></span></label>
           <input id="cmp-photo-input" class="visually-hidden" type="file" accept="image/*">
           <div id="cmp-photo-preview" class="photo-preview" hidden></div>
         </div>
-        <button class="btn btn--filled btn--block" type="submit">
-          <span class="icon" aria-hidden="true">edit_document</span><span data-i18n="cmp_submit"></span>
-        </button>
+        <button class="btn btn--filled btn--block" type="submit"><span class="icon" aria-hidden="true">edit_document</span><span data-i18n="cmp_submit"></span></button>
       </form>
-
       <div id="cmp-result" class="result stack" tabindex="-1" aria-live="polite"></div>
     </section>
   </main>
 
   <p class="footer-note" data-i18n="footer"></p>
 
-  <nav class="nav-bar" aria-label="Main">
-    <a class="nav-item" href="#copilot" data-nav="copilot"><span class="nav-item__pill"><span class="icon" aria-hidden="true">support_agent</span></span><span data-i18n="nav_copilot"></span></a>
-    <a class="nav-item" href="#ask" data-nav="ask"><span class="nav-item__pill"><span class="icon" aria-hidden="true">auto_awesome</span></span><span data-i18n="nav_ask"></span></a>
-    <a class="nav-item" href="#earnings" data-nav="earnings"><span class="nav-item__pill"><span class="icon" aria-hidden="true">payments</span></span><span data-i18n="nav_earnings"></span></a>
-    <a class="nav-item" href="#benefits" data-nav="benefits"><span class="nav-item__pill"><span class="icon" aria-hidden="true">volunteer_activism</span></span><span data-i18n="nav_benefits"></span></a>
-    <a class="nav-item" href="#complaint" data-nav="complaint"><span class="nav-item__pill"><span class="icon" aria-hidden="true">campaign</span></span><span data-i18n="nav_complaint"></span></a>
+  <nav id="nav" class="nav-bar nav-bar--3" aria-label="Main" hidden>
+    <a class="nav-item" href="#home" data-nav="home"><span class="nav-item__pill"><span class="icon" aria-hidden="true">support_agent</span></span><span data-i18n="nav_home"></span></a>
+    <a class="nav-item" href="#money" data-nav="money"><span class="nav-item__pill"><span class="icon" aria-hidden="true">payments</span></span><span data-i18n="nav_money"></span></a>
+    <a class="nav-item" href="#help" data-nav="help"><span class="nav-item__pill"><span class="icon" aria-hidden="true">help_center</span></span><span data-i18n="nav_help"></span></a>
   </nav>
 
   <dialog id="lang-dialog" aria-labelledby="lang-title" aria-describedby="lang-hint">
     <div class="card__head">
-      <div>
-        <h2 id="lang-title" data-i18n="lang_title"></h2>
-        <p id="lang-hint" class="card__hint" data-i18n="lang_hint"></p>
-      </div>
+      <div><h2 id="lang-title" data-i18n="lang_title"></h2><p id="lang-hint" class="card__hint" data-i18n="lang_hint"></p></div>
       <button id="lang-close" class="btn btn--text btn--icon" type="button" data-i18n-aria="close"><span class="icon" aria-hidden="true">close</span></button>
     </div>
     <div id="lang-options" class="lang-grid" role="radiogroup" aria-labelledby="lang-title"></div>
+  </dialog>
+
+  <dialog id="menu-dialog" aria-labelledby="menu-name">
+    <div class="card__head">
+      <h2 id="menu-name"></h2>
+      <button id="menu-close" class="btn btn--text btn--icon" type="button" data-i18n-aria="close"><span class="icon" aria-hidden="true">close</span></button>
+    </div>
+    <div class="stack">
+      <section class="stack stack--tight"><h3 data-i18n="menu_forwarding"></h3><div id="menu-forwarding"></div></section>
+      <div class="row">
+        <button id="menu-intro" class="btn btn--tonal" type="button"><span class="icon" aria-hidden="true">replay</span><span data-i18n="menu_intro"></span></button>
+        <button id="menu-logout" class="btn btn--outlined" type="button"><span class="icon" aria-hidden="true">logout</span><span data-i18n="logout"></span></button>
+      </div>
+    </div>
   </dialog>
 
   <div id="snackbar" class="snackbar" role="status" aria-live="polite"></div>

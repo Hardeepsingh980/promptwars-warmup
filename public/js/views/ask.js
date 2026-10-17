@@ -2,15 +2,12 @@
 import { api } from "../api.js";
 import { $, h, icon, showLoading, showResult, snackbar } from "../dom.js";
 import { t } from "../i18n.js";
-import { shrinkImage, startRecording } from "../media.js";
+import { shrinkImage } from "../media.js";
 import { speakButton } from "../speech.js";
 
-const MAX_RECORDING_MS = 60_000;
 const CALLS = { call_emergency: "112", call_cyber: "1930", call_legal_aid: "15100" };
 
 let app;
-let recording = null;
-let recordingTimer = null;
 
 export function init(context) {
   app = context;
@@ -20,7 +17,6 @@ export function init(context) {
     if (text) ask({ text });
   });
   $("#ask-photo-input").addEventListener("change", onPhoto);
-  $("#ask-mic").addEventListener("click", toggleRecording);
   for (const chip of document.querySelectorAll("[data-example]")) {
     chip.addEventListener("click", () => {
       $("#ask-text").value = t(chip.dataset.example);
@@ -42,40 +38,6 @@ async function onPhoto(event) {
   } catch {
     snackbar(t("error_photo"));
   }
-}
-
-async function toggleRecording() {
-  if (recording) return finishRecording();
-  try {
-    recording = await startRecording();
-  } catch {
-    recording = null;
-    snackbar(t("error_mic"));
-    return;
-  }
-  setMicState(true);
-  recordingTimer = setTimeout(finishRecording, MAX_RECORDING_MS);
-}
-
-async function finishRecording() {
-  clearTimeout(recordingTimer);
-  const current = recording;
-  recording = null;
-  setMicState(false);
-  if (!current) return;
-  const audio = await current.stop();
-  if (audio.seconds < 0.5) return;
-  ask({ audio: { mimeType: audio.mimeType, data: audio.data } });
-}
-
-function setMicState(active) {
-  const mic = $("#ask-mic");
-  mic.classList.toggle("btn--recording", active);
-  mic.classList.toggle("btn--tertiary", !active);
-  mic.setAttribute("aria-pressed", String(active));
-  mic.querySelector(".icon").textContent = active ? "stop" : "mic";
-  $("#ask-mic-label").textContent = active ? t("ask_stop") : t("ask_speak");
-  $("#ask-recording").hidden = !active;
 }
 
 async function ask(input) {
@@ -112,7 +74,7 @@ function actionButton(action, answer) {
     return h("a", { class: "btn btn--outlined", href: `tel:${CALLS[action]}` }, icon("call"), h("span", { text: t(`act_${action}`) }));
   }
   const handlers = {
-    log_earnings: () => app.navigate("earnings", { prefill: answer.earnings }),
+    log_earnings: () => app.navigate("money", { prefill: answer.earnings }),
     complaint: () => app.navigate("complaint", { problem: answer.problem || answer.summary.join(" "), platform: answer.earnings?.platform }),
     benefits: () => app.navigate("benefits"),
   };

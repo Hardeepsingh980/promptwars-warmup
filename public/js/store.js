@@ -2,8 +2,7 @@
  * Data that stays on the worker's phone: language, profile, and the earnings log.
  * Every read and write is wrapped in try/catch, because storage can be blocked.
  */
-const KEYS = { language: "haqdar.language", profile: "haqdar.profile", log: "haqdar.log", strings: "haqdar.strings." };
-const MAX_LOG_ENTRIES = 366;
+const KEYS = { language: "haqdar.language", profile: "haqdar.profile", strings: "haqdar.strings." };
 
 function read(key, fallback) {
   try {
@@ -27,21 +26,6 @@ export const setLanguage = (code) => write(KEYS.language, code);
 
 export const getProfile = () => read(KEYS.profile, {});
 export const updateProfile = (changes) => write(KEYS.profile, { ...getProfile(), ...changes });
-
-export const getLog = () => read(KEYS.log, []);
-
-/** Add a day to the log, newest first. */
-export function addLogEntry(entry) {
-  const log = [{ id: crypto.randomUUID(), ...entry }, ...getLog()].slice(0, MAX_LOG_ENTRIES);
-  write(KEYS.log, log);
-  return log;
-}
-
-export function removeLogEntry(id) {
-  const log = getLog().filter((entry) => entry.id !== id);
-  write(KEYS.log, log);
-  return log;
-}
 
 export const getCachedStrings = (language, version) => {
   const cached = read(KEYS.strings + language, null);

@@ -4,17 +4,27 @@ Haqdar ("the rightful claimant" in Hindi and Urdu) is a Gemini-powered helper fo
 
 Live app: https://haqdar-945707801757.asia-south1.run.app
 
-## Saathi, the riding co-pilot
+## Saathi, the voice co-pilot
+
+Saathi is an animated character with a real voice. The rider talks to it through a Gemini Live session (two-way audio over a WebSocket). Saathi greets the rider by name, listens, answers in their language, and acts: it starts and stops rides, sets the ETA, logs earnings, reads out call messages, and opens the right screen. Its mouth moves with the loudness and tone of the actual audio.
 
 Riders get customer calls while they drive. Answering is unsafe, and a missed call can bring a penalty. Saathi fixes this:
 
 1. The rider forwards missed and busy calls to +91 80314 50668 by dialing `**61*+918031450668#` and `**67*+918031450668#` once.
-2. A Cheerio AI voice agent answers in Hindi or the caller's language. At the start of each call, it reads the rider's name, status, and order ETA from `GET /api/copilot/status`.
-3. When the call ends, Cheerio sends the call record to `POST /api/copilot/call-ended`. Gemini pulls out who called, why, the exact details (gate code, landmark), the urgency, and scam signs, and writes a spoken message in the rider's language.
-4. An animated avatar face on the Co-pilot screen speaks urgent calls at once. It saves the rest and reads them aloud when the rider taps "I have stopped". Its lips move with the real Gemini voice.
-5. The rider can talk to Saathi hands-free, for example "traffic, I will reach in 20 minutes". Gemini picks an action and the server updates the ETA, so the next caller hears the new time.
+2. A Cheerio AI voice agent answers in Hindi or the caller's language. At the start of each call it reads the rider's name, status, and order ETA from `GET /api/copilot/status`.
+3. When the call ends, Cheerio sends the call record to `POST /api/copilot/call-ended/<token>`. Gemini pulls out who called, why, the exact details (gate code, landmark), the urgency, and scam signs, and writes a spoken message in the rider's language.
+4. Urgent calls are spoken at once. The rest are read out when the rider says "I have stopped" or taps the button.
 
-Both phone endpoints need the `X-Copilot-Key` header. Caller numbers are masked, and the phone agent never sees messages or earnings. To test, call +91 80314 50668 from any phone, then open the Co-pilot screen.
+The demo shares one phone line, so the phone agent speaks for the user who last started a ride. In production each rider gets their own virtual number.
+
+## The user journey
+
+1. Sign up with a name, mobile number, password, and language. Or log in.
+2. Setup: state, type of work, and the app or employer.
+3. Meet Saathi: an intro conversation, a sample call that runs through the real pipeline, and the dial codes for call forwarding.
+4. Home: Saathi, the ride switch, calls Saathi answered, and the current order. Two more tabs: Money and Help.
+
+Demo account for evaluators: number `9999999999`, password `saathi123`.
 
 ## What a worker can do
 
@@ -32,9 +42,7 @@ Each screen can read its answer aloud with Gemini text to speech. The whole inte
 3. Run `npm install`.
 4. Run `npm start`, then open http://localhost:3000.
 
-Run `npm test` to run the 35 unit and API tests. The tests use a fake model, so they need no key.
-
-There is no login. Evaluators do not need test credentials.
+Run `npm test` to run the 47 unit and API tests. The tests use a fake model, so they need no key.
 
 ## How it keeps answers honest
 
@@ -42,15 +50,19 @@ Every answer comes from a real Gemini call with a JSON schema. Scheme names, rul
 
 ## Security, speed, and accessibility
 
-The API key stays on the server (Secret Manager on Cloud Run). The server checks every input, limits requests per IP, and sends a strict Content Security Policy. Model text goes into the page only as text, never as HTML. Photos are shrunk in the browser before upload. Voice is recorded as 16 kHz WAV. Translations and speech are cached. The interface follows Material You with large touch targets, labels on every control, live regions for results, keyboard support, and reduced motion support.
+The Gemini key stays on the server (Secret Manager on Cloud Run); the browser talks to Gemini Live only through the server's WebSocket bridge. Passwords are hashed with scrypt. Sessions are signed HttpOnly cookies. Every data route is per user. The phone agent's status tool needs a header key, and the call-ended webhook carries a secret token in its URL because the sender cannot set headers; a wrong token gets a 404. The webhook can only add a message, never read anything, and its content is passed to Gemini as untrusted text. The server checks every input, limits requests per IP, and sends a strict Content Security Policy. Model text goes into the page only as text, never as HTML. Photos are shrunk in the browser before upload. Translations and speech are cached. The interface follows Material You with large touch targets, labels on every control, live regions for results, keyboard support, and reduced motion support.
 
 ## Project layout
 
 - `server.js`: starts the server.
 - `src/app.js`: routes, security headers, and errors.
+- `src/auth/`: users, password hashing, signed sessions.
+- `src/copilot/`: rider state, call messages, Saathi's tools, phone agent routes.
+- `src/live/proxy.js`: the Gemini Live WebSocket bridge.
+- `src/db.js`: a JSON document store (a Cloud Storage volume on Cloud Run).
 - `src/features/`: one file per feature, each with input checks, prompt, and schema.
 - `src/data/`: schemes, laws, helplines, and states.
 - `shared/`: pay math and interface text, used by both server and browser.
-- `public/`: the web app (plain HTML, CSS, and JavaScript modules).
+- `public/`: the web app (plain HTML, CSS, and JavaScript modules). `avatar.js` draws Saathi, `live.js` streams audio.
 - `test/`: tests for the Node test runner.
 - `docs/PRODUCT.md`: user stories and features.
