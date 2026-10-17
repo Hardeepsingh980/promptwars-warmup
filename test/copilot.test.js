@@ -164,8 +164,7 @@ test("the store bumps a per-user version and notifies subscribers on every chang
 test("GET /events streams the current version and then each change", async () => {
   const c = server.client();
   await c.signup({ name: "Streamer", phone: "9999900077", password: "stream12" });
-  const controller = new AbortController();
-  const response = await c.call("/api/copilot/events", { signal: controller.signal });
+  const response = await c.call("/api/copilot/events");
   assert.match(response.headers.get("content-type"), /^text\/event-stream/);
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
@@ -173,5 +172,5 @@ test("GET /events streams the current version and then each change", async () =>
   assert.match(await read(), /event: version\ndata: 0/);
   await c.json("/api/copilot/rider", { method: "PUT", body: { status: "riding" } });
   assert.match(await read(), /data: 1/);
-  controller.abort();
+  await reader.cancel();
 });
