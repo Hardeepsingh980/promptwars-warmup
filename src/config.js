@@ -7,6 +7,12 @@ export const config = Object.freeze({
   sessionSecret: process.env.SESSION_SECRET ?? "",
   dataFile: process.env.DATA_FILE ?? "data/haqdar.json",
   phoneLine: process.env.PHONE_LINE ?? "+918031450668",
+  whatsapp: Object.freeze({
+    apiKey: process.env.CHEERIO_API_KEY ?? "",
+    baseUrl: process.env.CHEERIO_BASE_URL ?? "https://newprod.api.cheerio.in/direct-apis",
+    webhookToken: process.env.WHATSAPP_WEBHOOK_TOKEN ?? "",
+    number: process.env.WHATSAPP_NUMBER ?? "",
+  }),
   liveModel: process.env.GEMINI_LIVE_MODEL ?? "gemini-3.8-live",
   liveVoice: process.env.GEMINI_LIVE_VOICE ?? "Kore",
   demoUser: Object.freeze({ phone: process.env.DEMO_PHONE ?? "9999999999", password: process.env.DEMO_PASSWORD ?? "saathi123", name: "Ravi" }),

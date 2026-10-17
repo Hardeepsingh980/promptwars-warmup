@@ -16,6 +16,8 @@ import { createAuthRouter, requireUser, sessionMiddleware } from "./auth/routes.
 import { createUserService } from "./auth/users.js";
 import { createCopilotRouter } from "./copilot/routes.js";
 import { createCopilotStore } from "./copilot/store.js";
+import { createWhatsAppClient } from "./whatsapp/client.js";
+import { createWhatsAppRouter } from "./whatsapp/routes.js";
 
 const PUBLIC_DIR = fileURLToPath(new URL("../public", import.meta.url));
 const SHARED_DIR = fileURLToPath(new URL("../shared", import.meta.url));
@@ -55,10 +57,12 @@ function featureRoute(feature, ai) {
  * Build the Express app and the services the live voice bridge shares with it.
  * `ai` is the model client and `db` the document store, both injected so tests can use fakes.
  */
-export function createApp({ ai, db, rateLimit = config.rateLimit, secrets = config } = {}) {
+export function createApp({ ai, db, rateLimit = config.rateLimit, secrets = config, whatsappClient } = {}) {
   const users = createUserService(db);
   const copilot = createCopilotStore(db);
   const earnings = createEarningsService(db);
+  const whatsapp = secrets.whatsapp ?? config.whatsapp;
+  const client = whatsappClient ?? createWhatsAppClient({ apiKey: whatsapp.apiKey, baseUrl: whatsapp.baseUrl });
 
   const app = express();
   app.disable("x-powered-by");
@@ -75,7 +79,7 @@ export function createApp({ ai, db, rateLimit = config.rateLimit, secrets = conf
 
   api.get("/meta", (request, response) => {
     response.set("Cache-Control", "public, max-age=3600");
-    response.json({ languages: LANGUAGES, states: STATES, workTypes: WORK_TYPES, helplines: HELPLINES, phoneLine: config.phoneLine });
+    response.json({ languages: LANGUAGES, states: STATES, workTypes: WORK_TYPES, helplines: HELPLINES, phoneLine: config.phoneLine, whatsappNumber: config.whatsapp.number });
   });
   api.get("/strings", async (request, response) => {
     const result = await translate.run(ai, translate.parseInput(request.query));
@@ -84,6 +88,7 @@ export function createApp({ ai, db, rateLimit = config.rateLimit, secrets = conf
   });
   api.use("/auth", createAuthRouter({ users, secret: secrets.sessionSecret }));
   api.use("/copilot", createCopilotRouter({ ai, users, copilot, earnings, toolKey: secrets.copilotToolKey, webhookToken: secrets.copilotWebhookToken }));
+  api.use("/whatsapp", createWhatsAppRouter({ deps: { ai, users, copilot, earnings, client }, token: whatsapp.webhookToken }));
 
   api.use(requireUser);
   api.use("/earnings", createEarningsRouter(earnings));

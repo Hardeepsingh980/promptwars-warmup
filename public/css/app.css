@@ -419,22 +419,22 @@ dialog[open] { animation: enter var(--md-slow) var(--md-ease); }
   transition: opacity var(--md-standard) var(--md-ease);
 }
 .stage::after {
-  content: ""; position: absolute; inset: 8%; border-radius: 50%;
-  background: radial-gradient(circle at 50% 35%, #fffbfe 0%, #f3edf7 70%, #e7e0ec 100%);
-  box-shadow: inset 0 -12px 24px rgb(103 80 164 / 0.12), var(--md-shadow-2);
+  content: ""; position: absolute; inset: 10%; border-radius: 50%;
+  background: radial-gradient(circle at 50% 30%, #ffffff 0%, #f3edf7 60%, #e7e0ec 100%);
+  box-shadow: inset 0 -14px 28px rgb(103 80 164 / 0.1), var(--md-shadow-2);
 }
 .saathi { position: relative; z-index: 1; width: 100%; height: 100%; overflow: visible; }
-.saathi .head { transform-box: fill-box; transform-origin: 50% 85%; will-change: transform; }
+.saathi .head { transform-box: fill-box; transform-origin: 50% 60%; will-change: transform; }
 .saathi .pupil, .saathi .lid, .saathi .brow { transition: transform 120ms linear; }
-.saathi .lid { transform: translateY(-34px); }
-.saathi .body { transform-box: fill-box; transform-origin: 50% 100%; animation: breathe 4s var(--md-ease) infinite; }
+.saathi .lid { transform: translateY(-38px); }
 .saathi .mic { transition: fill var(--md-fast) var(--md-ease); }
 
 .stage[data-state="riding"] { --ring-a: #1e88e5; --ring-b: var(--md-primary); --ring-c: #bbdefb; }
 .stage[data-state="riding"]::before { animation-duration: 3s; opacity: 0.6; }
 .stage[data-state="listening"] { --ring-a: #2e7d32; --ring-b: #a5d6a7; --ring-c: var(--md-primary-container); }
 .stage[data-state="listening"]::before { opacity: 0.85; animation: spin 4s linear infinite, pulse-ring 1.6s var(--md-ease) infinite; }
-.stage[data-state="listening"] .mic { fill: #2e7d32; }
+.stage[data-state="listening"] .mic { fill: #43a047; }
+.stage[data-state="speaking"] .mic { fill: #ffd54f; }
 .stage[data-state="thinking"]::before { animation-duration: 1.2s; opacity: 0.7; }
 .stage[data-state="thinking"] .brow--left { transform: translateY(-3px) rotate(-6deg); }
 .stage[data-state="speaking"]::before { opacity: 0.9; animation-duration: 5s; }
@@ -444,7 +444,6 @@ dialog[open] { animation: enter var(--md-slow) var(--md-ease); }
 .stage[data-state="happy"] .brow { transform: translateY(-2px); }
 .stage[data-state="happy"] .cheek { opacity: 0.7; }
 
-@keyframes breathe { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.015); } }
 @keyframes pulse-ring { 50% { inset: 0; } }
 
 .captions {

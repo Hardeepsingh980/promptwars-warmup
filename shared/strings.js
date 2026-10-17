@@ -3,7 +3,7 @@
  * The server asks Gemini to translate this object for other languages.
  * Keep {placeholders} as they are. Bump STRINGS_VERSION when you change the text.
  */
-export const STRINGS_VERSION = 5;
+export const STRINGS_VERSION = 6;
 
 export const STRINGS = Object.freeze({
   tagline: "Your pay. Your rights. Your co-pilot.",
@@ -20,6 +20,8 @@ export const STRINGS = Object.freeze({
   menu_title: "Menu",
   menu_forwarding: "Call answering setup",
   menu_intro: "Replay the intro",
+  menu_whatsapp: "Chat with Saathi on WhatsApp",
+  menu_whatsapp_hint: "Send a text, a voice note, or a photo from your registered number. Saathi replies in your language, with a voice note.",
   logout: "Log out",
 
   login_title: "Welcome back",
@@ -48,10 +50,12 @@ export const STRINGS = Object.freeze({
   welcome_title: "Meet Saathi",
   welcome_hint: "Saathi is your voice co-pilot. Tap the button, allow the microphone, and say hello.",
   welcome_meet: "Meet Saathi",
-  welcome_step_call: "Try a sample call",
-  welcome_step_call_hint: "See what happens when a customer calls while you ride.",
-  welcome_sample_button: "Play a sample call",
-  welcome_sample_done: "Saathi answered a sample call. Ask Saathi what the caller said, or tap Play my messages.",
+  welcome_step_call: "Try a real call",
+  welcome_step_call_hint: "Tap Start riding. Then call Saathi from any phone and talk to it like a customer would.",
+  welcome_start_button: "Start riding",
+  welcome_call_now: "Now call this number from any phone:",
+  welcome_call_waiting: "Waiting for your call. Hang up when you finish.",
+  welcome_call_done: "Saathi took your call. Ask Saathi what the caller said, or tap Play my messages on Home.",
   welcome_step_forward: "Turn on call answering",
   welcome_finish: "Start using Haqdar",
   welcome_skip: "Skip for now",
@@ -81,7 +85,7 @@ export const STRINGS = Object.freeze({
   cp_urgent: "Urgent",
   cp_scam: "Possible scam",
   cp_call_back: "Wants a call back",
-  sample_badge: "Sample",
+  recording: "Call recording",
   delete_message: "Delete this message",
   cp_order_title: "Your current order",
   cp_order_hint: "Saathi tells callers your name and ETA. It never shares your number, location, or earnings.",

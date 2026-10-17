@@ -128,6 +128,9 @@ function buildDialogs() {
 
   const menu = $("#menu-dialog");
   $("#account").addEventListener("click", () => { $("#menu-forwarding").replaceChildren(welcome.forwardingCard()); menu.showModal(); });
+  const whatsapp = $("#menu-whatsapp");
+  if (meta.whatsappNumber) whatsapp.href = `https://wa.me/${meta.whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent("Namaste Saathi")}`;
+  else whatsapp.closest("section").hidden = true;
   $("#menu-close").addEventListener("click", () => menu.close());
   $("#menu-intro").addEventListener("click", () => { menu.close(); navigate("welcome"); });
   $("#menu-logout").addEventListener("click", async () => {

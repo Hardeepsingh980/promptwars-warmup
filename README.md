@@ -13,15 +13,21 @@ Riders get customer calls while they drive. Answering is unsafe, and a missed ca
 1. The rider forwards missed and busy calls to +91 80314 50668 by dialing `**61*+918031450668#` and `**67*+918031450668#` once.
 2. A Cheerio AI voice agent answers in Hindi or the caller's language. At the start of each call it reads the rider's name, status, and order ETA from `GET /api/copilot/status`.
 3. When the call ends, Cheerio sends the call record to `POST /api/copilot/call-ended/<token>`. Gemini pulls out who called, why, the exact details (gate code, landmark), the urgency, and scam signs, and writes a spoken message in the rider's language.
-4. Urgent calls are spoken at once. The rest are read out when the rider says "I have stopped" or taps the button.
+4. Urgent calls are spoken at once. The rest are read out when the rider says "I have stopped" or taps the button. When the call record carries a recording link, the rider can play the recording in the call list.
 
 The demo shares one phone line, so the phone agent speaks for the user who last started a ride. In production each rider gets their own virtual number.
+
+## Saathi on WhatsApp
+
+The rider can use everything from WhatsApp, with no app open. They message the Haqdar number from their registered phone with a text, a voice note, or a photo. One message can carry several requests at once, for example a payslip screenshot with "why was this cut, log it, and I am heading to Koramangala in 15 minutes". Gemini reads the photo or the audio, calls every tool it needs (log earnings, set the order, update the ride status), and answers in the rider's language. The reply comes back as text and as a voice note made with Gemini text to speech.
+
+Incoming messages arrive on `POST /api/whatsapp/webhook/<token>`. The server answers at once and works in the background, drops repeated deliveries, and ignores numbers that have no account (it sends them a short sign-up note). Replies go out through the Cheerio Direct API.
 
 ## The user journey
 
 1. Sign up with a name, mobile number, password, and language. Or log in.
 2. Setup: state, type of work, and the app or employer.
-3. Meet Saathi: an intro conversation, a sample call that runs through the real pipeline, and the dial codes for call forwarding.
+3. Meet Saathi: an intro conversation, a real test call to Saathi's number, and the dial codes for call forwarding.
 4. Home: Saathi, the ride switch, calls Saathi answered, and the current order. Two more tabs: Money and Help.
 
 Demo account for evaluators: number `9999999999`, password `saathi123`.
@@ -42,7 +48,7 @@ Each screen can read its answer aloud with Gemini text to speech. The whole inte
 3. Run `npm install`.
 4. Run `npm start`, then open http://localhost:3000.
 
-Run `npm test` to run the 47 unit and API tests. The tests use a fake model, so they need no key.
+Run `npm test` to run the 55 unit and API tests. The tests use a fake model, so they need no key.
 
 ## How it keeps answers honest
 

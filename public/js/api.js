@@ -50,7 +50,7 @@ export const api = {
     update: (changes) => put("/api/copilot/rider", changes),
     heard: (ids) => post("/api/copilot/messages/heard", { ids }),
     remove: (id) => request(`/api/copilot/messages/${encodeURIComponent(id)}`, { method: "DELETE" }),
+    recordingUrl: (id) => `/api/copilot/messages/${encodeURIComponent(id)}/recording`,
     ask: (body) => post("/api/copilot/ask", body),
-    sampleCall: () => post("/api/copilot/sample-call"),
   },
 };

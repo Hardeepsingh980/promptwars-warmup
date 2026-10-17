@@ -8,11 +8,13 @@ import { renderCaptions } from "./captions.js";
 let app;
 let unsubscribe = null;
 let captions;
+let known = null;
+let poll = null;
 
 export function init(context) {
   app = context;
   $("#welcome-meet").addEventListener("click", meet);
-  $("#welcome-sample").addEventListener("click", sampleCall);
+  $("#welcome-start").addEventListener("click", startRideForTest);
   $("#welcome-finish").addEventListener("click", () => finish(true));
   $("#welcome-skip").addEventListener("click", () => finish(false));
   captions = renderCaptions($("#welcome-captions"));
@@ -23,7 +25,11 @@ export function enter() {
   saathi.setResting("happy");
   $("#welcome-step-2").hidden = true;
   $("#welcome-step-3").hidden = true;
-  $("#welcome-sample-done").hidden = true;
+  $("#welcome-call-done").hidden = true;
+  $("#welcome-call-link").replaceChildren(icon("call"), app.meta.phoneLine);
+  $("#welcome-call-link").href = `tel:${app.meta.phoneLine}`;
+  known = null;
+  clearInterval(poll);
   $("#welcome-forwarding").replaceChildren(forwardingCard());
   captions.clear();
   unsubscribe?.();
@@ -33,6 +39,7 @@ export function enter() {
 export function leave() {
   unsubscribe?.();
   unsubscribe = null;
+  clearInterval(poll);
   saathi.stop();
 }
 
@@ -52,18 +59,35 @@ async function meet() {
   await saathi.start({ intro: true });
 }
 
-async function sampleCall() {
-  const button = $("#welcome-sample");
+/** Put the rider on the line, then watch for the message from their test call. */
+async function startRideForTest() {
+  const button = $("#welcome-start");
   button.disabled = true;
   try {
-    await api.copilot.sampleCall();
-    $("#welcome-sample-done").hidden = false;
+    await api.copilot.update({ status: "riding" });
+    const { messages } = await api.copilot.get();
+    known = new Set(messages.map((message) => message.id));
     $("#welcome-step-3").hidden = false;
-    if (saathi.isLive()) saathi.sendText("(A sample call just came in while I was riding. Tell me what the caller wanted, using get_messages.)");
+    clearInterval(poll);
+    poll = setInterval(checkForCall, 4000);
+    if (saathi.isLive()) saathi.sendText("(I am going to call your number from my phone now, as a test. Tell me in one sentence to go ahead.)");
   } catch (error) {
     snackbar(error.message || t("error_generic"));
   } finally {
     button.disabled = false;
+  }
+}
+
+async function checkForCall() {
+  try {
+    const { messages } = await api.copilot.get();
+    const fresh = messages.filter((message) => !known.has(message.id));
+    if (fresh.length === 0) return;
+    clearInterval(poll);
+    $("#welcome-call-done").hidden = false;
+    if (saathi.isLive()) saathi.sendText("(My test call just ended. Tell me what the caller said, using get_messages.)");
+  } catch {
+    // Try again on the next tick.
   }
 }
 

@@ -64,6 +64,20 @@ export async function generateJson({ system, parts, schema, maxOutputTokens = 20
   }
 }
 
+/**
+ * Ask the model with function declarations. Returns the parts of the first candidate,
+ * which may hold text, functionCall parts, or both. The caller runs the loop.
+ */
+export async function generateWithTools({ system, contents, tools, temperature = 0.3, maxOutputTokens = 2048 }) {
+  const data = await callModel(config.model, {
+    systemInstruction: { parts: [{ text: system }] },
+    contents,
+    tools: [{ functionDeclarations: tools }],
+    generationConfig: { temperature, maxOutputTokens, thinkingConfig: { thinkingBudget: 0 } },
+  });
+  return data?.candidates?.[0]?.content?.parts ?? [];
+}
+
 /** Turn text into speech. Returns { mimeType, data } where data is base64 audio. */
 export async function generateSpeech(text) {
   const data = await callModel(config.ttsModel, {

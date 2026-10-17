@@ -6,7 +6,7 @@ import { systemPrompt } from "../prompts.js";
 import { requireLanguage, requireMedia, requireNumber, requireText } from "../validate.js";
 import { requireUser } from "../auth/routes.js";
 import { requireToolKey } from "./auth.js";
-import { findCallerNumber, findTranscript, maskNumber } from "./payload.js";
+import { findCallerNumber, findRecordingUrl, findTranscript, maskNumber, describeKeys } from "./payload.js";
 import { TOOL_DECLARATIONS, runTool } from "./tools.js";
 
 const STATUSES = ["riding", "stopped", "offline"];
@@ -55,12 +55,6 @@ const ASK_SCHEMA = {
   required: ["transcript", "reply", "tool", "minutes", "screen"],
 };
 
-const SAMPLE_TRANSCRIPT = `assistant: Namaste, main {name} ki assistant Saathi bol rahi hoon. Woh abhi gaadi chala rahe hain.
-user: Haan, mera order aa raha hai na? Main Tower B mein hoon, gate number 2 se aana. Gate code 4521 hai.
-assistant: Theek hai, Tower B, gate number 2, gate code 4521. {name} lagbhag 8 minute mein pahunch jayenge.
-user: Theek hai, aur bell mat bajana, bachcha so raha hai. Call kar dena.
-assistant: Zaroor. Main {name} ko bata dungi: bell nahi, call karna hai.`;
-
 /** The status that the phone agent sees. It never includes caller numbers, messages, or earnings. */
 function publicStatus(user, rider) {
   return {
@@ -108,15 +102,21 @@ export function tokenMatches(sent, expected) {
 }
 
 /** Turn a call record into a message with Gemini and save it for `user`. */
-async function recordCall({ ai, copilot, user, payload, sample = false }) {
+async function recordCall({ ai, copilot, user, payload }) {
   const callerNumber = findCallerNumber(payload);
   const transcript = findTranscript(payload);
+  const recordingUrl = findRecordingUrl(payload);
   const record = [
     transcript ? `Transcript:\n${transcript}` : "No transcript field found.",
     `Full webhook data:\n${JSON.stringify(payload).slice(0, MAX_PAYLOAD_CHARS)}`,
   ].join("\n\n");
   const call = await ai.generateJson({ system: systemPrompt(CALL_ROLE, user.language), parts: [{ text: record }], schema: CALL_SCHEMA, maxOutputTokens: 1024 });
-  return copilot.addMessage(user.id, { ...call, callerNumber: maskNumber(callerNumber), hasTranscript: Boolean(transcript), sample });
+  return copilot.addMessage(user.id, { ...call, callerNumber: maskNumber(callerNumber), hasTranscript: Boolean(transcript), recordingUrl });
+}
+
+/** What the browser may see of a message. The recording URL stays on the server. */
+function publicMessage({ recordingUrl, userId, ...message }) {
+  return { ...message, hasRecording: Boolean(recordingUrl) };
 }
 
 /**
@@ -142,6 +142,7 @@ export function createCopilotRouter({ ai, users, copilot, earnings, toolKey, web
   router.post(["/call-ended/:token", "/call-ended"], express.urlencoded({ extended: true, limit: "1mb" }), async (request, response) => {
     const sent = request.params.token ?? request.query.token;
     if (!tokenMatches(sent, webhookToken)) return response.status(404).json({ error: "Not found" });
+    console.log(`call-ended webhook fields: ${describeKeys(request.body)}`);
     const user = lineOwner();
     if (!user) return response.json({ ok: false, reason: "No rider is on this line right now" });
     const message = await recordCall({ ai, copilot, user, payload: request.body ?? {} });
@@ -153,7 +154,7 @@ export function createCopilotRouter({ ai, users, copilot, earnings, toolKey, web
   router.get("/rider", (request, response) => {
     response.set("Cache-Control", "no-store");
     const userId = request.user.id;
-    response.json({ rider: copilot.getRider(userId), messages: copilot.listMessages(userId), onLine: copilot.lineOwnerId() === userId });
+    response.json({ rider: copilot.getRider(userId), messages: copilot.listMessages(userId).map(publicMessage), onLine: copilot.lineOwnerId() === userId });
   });
 
   router.put("/rider", (request, response) => {
@@ -166,17 +167,22 @@ export function createCopilotRouter({ ai, users, copilot, earnings, toolKey, web
     response.json({ ok: true });
   });
 
+  /** Stream a call recording from the provider, so the page never needs a third-party media origin. */
+  router.get("/messages/:id/recording", async (request, response) => {
+    const message = copilot.listMessages(request.user.id).find((item) => item.id === request.params.id);
+    if (!message?.recordingUrl) throw new HttpError(404, "No recording for this call");
+    const upstream = await fetch(message.recordingUrl, { redirect: "follow", signal: AbortSignal.timeout(20_000) });
+    if (!upstream.ok || !upstream.body) throw new HttpError(502, "The recording could not be fetched");
+    response.set({ "Content-Type": upstream.headers.get("content-type") ?? "audio/mpeg", "Cache-Control": "private, max-age=3600" });
+    const length = upstream.headers.get("content-length");
+    if (length) response.set("Content-Length", length);
+    const { Readable } = await import("node:stream");
+    Readable.fromWeb(upstream.body).pipe(response);
+  });
+
   router.delete("/messages/:id", (request, response) => {
     copilot.removeMessage(request.user.id, String(request.params.id));
     response.json({ ok: true });
-  });
-
-  /** Onboarding: run a sample call through the real pipeline, marked as a sample. */
-  router.post("/sample-call", async (request, response) => {
-    const transcript = SAMPLE_TRANSCRIPT.replaceAll("{name}", request.user.name);
-    const payload = { call: { from: "+919800000000", transcript, sample: true } };
-    const message = await recordCall({ ai, copilot, user: request.user, payload, sample: true });
-    response.json({ message });
   });
 
   /** Typed or recorded input when the live voice session is not available. */

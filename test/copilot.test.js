@@ -1,6 +1,6 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { findCallerNumber, findTranscript, maskNumber } from "../src/copilot/payload.js";
+import { describeKeys, findCallerNumber, findRecordingUrl, findTranscript, maskNumber } from "../src/copilot/payload.js";
 import { parseRiderUpdate, tokenMatches } from "../src/copilot/routes.js";
 import { runTool, TOOL_DECLARATIONS } from "../src/copilot/tools.js";
 import { buildSystemInstruction } from "../src/live/proxy.js";
@@ -31,6 +31,14 @@ test("findCallerNumber finds digits under common keys and maskNumber hides them"
   assert.equal(findCallerNumber({ call: { from: "+91 98765-43210" } }), "919876543210");
   assert.equal(findCallerNumber({ from: "agent" }), "");
   assert.equal(maskNumber("919876543210"), "••••••••3210");
+});
+
+test("findRecordingUrl finds https audio links and describeKeys hides values", () => {
+  assert.equal(findRecordingUrl({ call: { recording_url: "https://x.example/a.mp3" } }), "https://x.example/a.mp3");
+  assert.equal(findRecordingUrl({ media: [{ url: "https://x.example/call.ogg?sig=1" }] }), "https://x.example/call.ogg?sig=1");
+  assert.equal(findRecordingUrl({ recording: "http://insecure.example/a.mp3" }), "", "only https");
+  assert.equal(findRecordingUrl({ transcript: "https://x.example/page" }), "");
+  assert.equal(describeKeys({ call: { from: "123", turns: [{ role: "a" }] } }), "call{from:string,turns[1]{role:string}}");
 });
 
 test("parseRiderUpdate and tokenMatches validate input", () => {
@@ -82,7 +90,7 @@ test("POST /call-ended/:token needs the URL token, saves a masked message for th
   assert.equal((await c.call("/api/copilot/call-ended/wrong-token", { method: "POST", body: {} })).status, 404);
   assert.equal((await c.call("/api/copilot/call-ended", { method: "POST", body: {} })).status, 404, "no token at all");
   assert.equal((await c.call(`/api/copilot/call-ended?token=${SECRETS.copilotWebhookToken}`, { method: "POST", body: { call: { transcript: "user: hi" } } })).status, 200, "query token works too");
-  const payload = { call: { from: "+919876543210", transcript: [{ role: "user", content: "Gate code 4521" }] } };
+  const payload = { call: { from: "+919876543210", transcript: [{ role: "user", content: "Gate code 4521" }], recording_url: "https://recordings.example/call.mp3" } };
   const ok = await c.json(`/api/copilot/call-ended/${SECRETS.copilotWebhookToken}`, { method: "POST", body: payload });
   assert.equal(ok.status, 200);
   assert.match(server.ai.calls.at(-1).parts[0].text, /user: Gate code 4521/);
@@ -90,6 +98,8 @@ test("POST /call-ended/:token needs the URL token, saves a masked message for th
   const { body } = await ravi.json("/api/copilot/rider");
   assert.equal(body.onLine, true);
   assert.equal(body.messages[0].details, "Gate code 4521");
+  assert.equal(body.messages[0].hasRecording, true);
+  assert.equal(body.messages[0].recordingUrl, undefined, "the raw URL stays on the server");
   assert.equal(body.messages[0].callerNumber, "••••••••3210");
   assert.equal(body.messages[0].heard, false);
 });
@@ -111,13 +121,6 @@ test("another user cannot see the first user's messages", async () => {
   const { body } = await other.json("/api/copilot/rider");
   assert.equal(body.messages.length, 0);
   assert.equal(body.onLine, false);
-});
-
-test("sample call runs the real pipeline and is marked as a sample", async () => {
-  server.ai.reply = () => callMessage;
-  const { body } = await ravi.json("/api/copilot/sample-call", { method: "POST" });
-  assert.equal(body.message.sample, true);
-  assert.match(server.ai.calls.at(-1).parts[0].text, /Ravi ki assistant Saathi/);
 });
 
 test("POST /ask runs the tool the model picked", async () => {

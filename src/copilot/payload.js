@@ -61,3 +61,32 @@ export function maskNumber(digits) {
   if (!digits) return "";
   return `${"•".repeat(Math.max(0, digits.length - 4))}${digits.slice(-4)}`;
 }
+
+const RECORDING_KEY = /record|recording|audio_?url|call_?audio|media_?url/i;
+const AUDIO_URL = /^https:\/\/\S+\.(mp3|wav|ogg|m4a|aac|opus)(\?\S*)?$/i;
+
+/** Return the first https link to a call recording, or "". */
+export function findRecordingUrl(payload, depth = 0) {
+  if (!payload || typeof payload !== "object" || depth > MAX_DEPTH) return "";
+  for (const [key, value] of Object.entries(payload)) {
+    if (typeof value === "string" && value.startsWith("https://") && (RECORDING_KEY.test(key) || AUDIO_URL.test(value))) return value;
+  }
+  for (const value of Object.values(payload)) {
+    if (value && typeof value === "object") {
+      const found = findRecordingUrl(value, depth + 1);
+      if (found) return found;
+    }
+  }
+  return "";
+}
+
+/** Describe the shape of a payload as key paths with types, without values. For logs. */
+export function describeKeys(payload, prefix = "", depth = 0) {
+  if (!payload || typeof payload !== "object" || depth > 3) return "";
+  return Object.entries(payload).slice(0, 40).map(([key, value]) => {
+    const path = prefix ? `${prefix}.${key}` : key;
+    if (Array.isArray(value)) return `${path}[${value.length}]` + (value[0] && typeof value[0] === "object" ? `{${describeKeys(value[0], "", depth + 1)}}` : "");
+    if (value && typeof value === "object") return `${path}{${describeKeys(value, "", depth + 1)}}`;
+    return `${path}:${typeof value}`;
+  }).join(",");
+}
