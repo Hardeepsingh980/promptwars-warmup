@@ -8,8 +8,13 @@ const waiters = new Set();
 /** Run `work` as a tracked background job. Errors are passed to `onError`. */
 export function track(work, onError = console.error) {
   count += 1;
-  return Promise.resolve()
-    .then(work)
+  let job;
+  try {
+    job = Promise.resolve(work());
+  } catch (error) {
+    job = Promise.reject(error);
+  }
+  return job
     .catch(onError)
     .finally(() => {
       count -= 1;
