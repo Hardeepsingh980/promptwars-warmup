@@ -52,15 +52,23 @@ export function createWhatsAppClient({ apiKey, baseUrl = DEFAULT_BASE_URL, fetch
     },
 
     /** Download an incoming media file by id. Returns { buffer, mimeType }. */
-    async getMedia(mediaId) {
+    async getMedia(mediaId, log = () => {}) {
       const { payload, contentType } = await call("/v1/whatsapp/media", { body: JSON.stringify({ mediaId }), headers: { "Content-Type": "application/json" } });
-      if (payload instanceof ArrayBuffer) return { buffer: Buffer.from(payload), mimeType: contentType.split(";")[0] || "application/octet-stream" };
-      // Some deployments answer with a JSON object that holds a temporary URL.
+      if (payload instanceof ArrayBuffer) {
+        const buffer = Buffer.from(payload);
+        log(`media ${mediaId}: ${contentType} ${buffer.length} bytes, head ${buffer.subarray(0, 8).toString("hex")}`);
+        return { buffer, mimeType: contentType.split(";")[0] || "application/octet-stream" };
+      }
+      // Cheerio proxies the WhatsApp Graph API, which answers with a JSON object that holds a temporary URL.
+      log(`media ${mediaId}: json keys ${Object.keys(payload ?? {}).join(",")}; mime ${payload?.mime_type ?? "?"}`);
       const url = payload?.url ?? payload?.data?.url ?? payload?.media_url ?? payload?.link;
       if (typeof url !== "string" || !url.startsWith("https://")) throw new Error("Cheerio get media returned no file");
       const response = await fetchImpl(url, { headers: { "x-api-key": apiKey }, signal: AbortSignal.timeout(TIMEOUT_MS) });
+      const buffer = Buffer.from(await response.arrayBuffer());
+      const type = (response.headers.get("content-type") ?? "application/octet-stream").split(";")[0];
+      log(`media ${mediaId}: download ${response.status} ${type} ${buffer.length} bytes from ${new URL(url).host}, head ${buffer.subarray(0, 8).toString("hex")}`);
       if (!response.ok) throw new Error(`Media download failed with ${response.status}`);
-      return { buffer: Buffer.from(await response.arrayBuffer()), mimeType: (response.headers.get("content-type") ?? "application/octet-stream").split(";")[0] };
+      return { buffer, mimeType: payload?.mime_type?.split(";")[0] ?? type };
     },
   };
 }

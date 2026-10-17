@@ -31,10 +31,10 @@ export function buildSystemInstruction({ user, rider, unheard, week }) {
 }
 
 /** Build the user message parts from the WhatsApp message, downloading media when present. */
-async function buildParts(message, client) {
+async function buildParts(message, client, log) {
   const parts = [];
   if (message.type === "image" || message.type === "audio") {
-    const media = await fetchMedia(message, client);
+    const media = await fetchMedia(message, client, log);
     if (media.buffer.length > MAX_MEDIA_BYTES) throw new Error("The file is too large");
     if (message.type === "audio") {
       // WhatsApp voice notes are OGG Opus, which Gemini does not read. ffmpeg turns them into WAV.
@@ -53,8 +53,8 @@ async function buildParts(message, client) {
   return parts;
 }
 
-async function fetchMedia(message, client) {
-  if (message.mediaId) return client.getMedia(message.mediaId);
+async function fetchMedia(message, client, log) {
+  if (message.mediaId) return client.getMedia(message.mediaId, log);
   if (message.mediaUrl?.startsWith("https://")) {
     const response = await fetch(message.mediaUrl, { signal: AbortSignal.timeout(30_000) });
     if (!response.ok) throw new Error(`Media download failed with ${response.status}`);
@@ -77,7 +77,7 @@ export async function answerMessage({ message, user, deps }) {
   const timings = {};
   const timed = async (label, work) => { const start = Date.now(); try { return await work(); } finally { timings[label] = (timings[label] ?? 0) + Date.now() - start; } };
 
-  const contents = [{ role: "user", parts: await timed("media", () => buildParts(message, client)) }];
+  const contents = [{ role: "user", parts: await timed("media", () => buildParts(message, client, deps.log ?? (() => {}))) }];
   const toolsRun = [];
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     const parts = await timed("model", () => ai.generateWithTools({ system, contents, tools: WHATSAPP_TOOLS }));

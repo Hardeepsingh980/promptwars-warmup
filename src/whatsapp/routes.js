@@ -30,7 +30,11 @@ export function createWhatsAppRouter({ deps, token, log = console.log }) {
     if (!authorized(request)) return response.status(404).json({ error: "Not found" });
     const payload = request.body ?? {};
     const messages = extractMessages(payload);
-    log(`whatsapp webhook: ${messages.length} message(s); fields: ${describeKeys(payload).slice(0, 600)}`);
+    log(`whatsapp webhook: ${messages.length} message(s); fields: ${describeKeys(payload, "", 0, 6).slice(0, 900)}`);
+    for (const message of messages) {
+      const { from, text, caption, ...rest } = message;
+      log(`whatsapp message from ...${from.slice(-4)}: ${JSON.stringify({ ...rest, text: text ? `${text.length} chars` : "", caption: caption ? `${caption.length} chars` : "" })}`);
+    }
     response.json({ ok: true, received: messages.length });
 
     for (const message of messages) {

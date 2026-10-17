@@ -81,12 +81,12 @@ export function findRecordingUrl(payload, depth = 0) {
 }
 
 /** Describe the shape of a payload as key paths with types, without values. For logs. */
-export function describeKeys(payload, prefix = "", depth = 0) {
-  if (!payload || typeof payload !== "object" || depth > 3) return "";
+export function describeKeys(payload, prefix = "", depth = 0, maxDepth = 3) {
+  if (!payload || typeof payload !== "object" || depth > maxDepth) return "";
   return Object.entries(payload).slice(0, 40).map(([key, value]) => {
     const path = prefix ? `${prefix}.${key}` : key;
-    if (Array.isArray(value)) return `${path}[${value.length}]` + (value[0] && typeof value[0] === "object" ? `{${describeKeys(value[0], "", depth + 1)}}` : "");
-    if (value && typeof value === "object") return `${path}{${describeKeys(value, "", depth + 1)}}`;
+    if (Array.isArray(value)) return `${path}[${value.length}]` + (value[0] && typeof value[0] === "object" ? `{${describeKeys(value[0], "", depth + 1, maxDepth)}}` : "");
+    if (value && typeof value === "object") return `${path}{${describeKeys(value, "", depth + 1, maxDepth)}}`;
     return `${path}:${typeof value}`;
   }).join(",");
 }
