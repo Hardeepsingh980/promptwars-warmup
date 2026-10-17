@@ -49,6 +49,7 @@ export const api = {
     get: () => request("/api/copilot/rider", { cache: "no-store" }),
     update: (changes) => put("/api/copilot/rider", changes),
     heard: (ids) => post("/api/copilot/messages/heard", { ids }),
+    remove: (id) => request(`/api/copilot/messages/${encodeURIComponent(id)}`, { method: "DELETE" }),
     ask: (body) => post("/api/copilot/ask", body),
     sampleCall: () => post("/api/copilot/sample-call"),
   },

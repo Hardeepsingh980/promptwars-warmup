@@ -3,7 +3,7 @@
  * The server asks Gemini to translate this object for other languages.
  * Keep {placeholders} as they are. Bump STRINGS_VERSION when you change the text.
  */
-export const STRINGS_VERSION = 4;
+export const STRINGS_VERSION = 5;
 
 export const STRINGS = Object.freeze({
   tagline: "Your pay. Your rights. Your co-pilot.",
@@ -82,6 +82,7 @@ export const STRINGS = Object.freeze({
   cp_scam: "Possible scam",
   cp_call_back: "Wants a call back",
   sample_badge: "Sample",
+  delete_message: "Delete this message",
   cp_order_title: "Your current order",
   cp_order_hint: "Saathi tells callers your name and ETA. It never shares your number, location, or earnings.",
   f_area: "Customer area",

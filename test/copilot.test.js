@@ -94,6 +94,17 @@ test("POST /call-ended/:token needs the URL token, saves a masked message for th
   assert.equal(body.messages[0].heard, false);
 });
 
+test("a rider can delete their own message but not another rider's", async () => {
+  const { body } = await ravi.json("/api/copilot/rider");
+  const id = body.messages[0].id;
+  const other = server.client();
+  await other.signup({ name: "Mallory", phone: "9999900009", password: "mallory1" });
+  await other.json(`/api/copilot/messages/${id}`, { method: "DELETE" });
+  assert.equal((await ravi.json("/api/copilot/rider")).body.messages.some((m) => m.id === id), true, "still there");
+  await ravi.json(`/api/copilot/messages/${id}`, { method: "DELETE" });
+  assert.equal((await ravi.json("/api/copilot/rider")).body.messages.some((m) => m.id === id), false);
+});
+
 test("another user cannot see the first user's messages", async () => {
   const other = server.client();
   await other.signup({ name: "Fatima", phone: "9999900002", password: "fatima12" });

@@ -46,6 +46,11 @@ export function createCopilotStore(db) {
       return this.listMessages(userId).filter((message) => !message.heard);
     },
 
+    removeMessage(userId, id) {
+      const message = db.get(MESSAGES, id);
+      if (message?.userId === userId) db.remove(MESSAGES, id);
+    },
+
     markHeard(userId, ids) {
       const wanted = new Set(ids);
       for (const message of this.listMessages(userId)) {

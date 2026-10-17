@@ -166,6 +166,11 @@ export function createCopilotRouter({ ai, users, copilot, earnings, toolKey, web
     response.json({ ok: true });
   });
 
+  router.delete("/messages/:id", (request, response) => {
+    copilot.removeMessage(request.user.id, String(request.params.id));
+    response.json({ ok: true });
+  });
+
   /** Onboarding: run a sample call through the real pipeline, marked as a sample. */
   router.post("/sample-call", async (request, response) => {
     const transcript = SAMPLE_TRANSCRIPT.replaceAll("{name}", request.user.name);

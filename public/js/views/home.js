@@ -167,7 +167,9 @@ function renderMessage(message) {
         message.sample && h("span", { class: "chip chip--static", text: t("sample_badge") }),
         message.urgency === "urgent" && h("span", { class: "verdict verdict--very_low" }, icon("priority_high"), t("cp_urgent")),
         message.scamSuspected && h("span", { class: "verdict verdict--very_low" }, icon("gpp_maybe"), t("cp_scam")),
-        message.callBack && h("span", { class: "verdict verdict--low" }, icon("phone_callback"), t("cp_call_back")))));
+        message.callBack && h("span", { class: "verdict verdict--low" }, icon("phone_callback"), t("cp_call_back")))),
+    h("button", { class: "btn btn--text btn--icon", type: "button", "aria-label": `${t("delete_message")} ${who}`,
+      onclick: async () => { await api.copilot.remove(message.id).catch(() => {}); refresh(true); } }, icon("delete")));
 }
 
 async function toggleRiding() {
