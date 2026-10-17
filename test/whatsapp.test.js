@@ -2,7 +2,7 @@ import { test, before, after, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { extractMessages } from "../src/whatsapp/payload.js";
 import { parseWav, wavToMp3 } from "../src/audio/mp3.js";
-import { answerMessage, buildSystemInstruction, WHATSAPP_TOOLS } from "../src/whatsapp/agent.js";
+import { answerMessage, buildSystemInstruction, spokenVersion, WHATSAPP_TOOLS } from "../src/whatsapp/agent.js";
 import { SECRETS, silentWav, startTestServer } from "./helpers.js";
 
 let server;
@@ -170,4 +170,12 @@ test("inflight tracks background jobs so shutdown can wait for them", async () =
   assert.equal(pending(), 0);
   await track(() => { throw new Error("boom"); }, () => {});
   assert.equal(pending(), 0);
+});
+
+test("spokenVersion strips markup and cuts long replies at a sentence end", () => {
+  assert.equal(spokenVersion("Aaj *₹780* bache.\n\nShabash!"), "Aaj ₹780 bache. Shabash!");
+  const long = `${"यह एक लंबा वाक्य है। ".repeat(40)}अंत।`;
+  const spoken = spokenVersion(long);
+  assert.ok(spoken.length <= 600);
+  assert.ok(spoken.endsWith("।"));
 });

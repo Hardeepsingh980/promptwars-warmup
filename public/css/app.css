@@ -104,7 +104,7 @@ main:focus { outline: none; }
 .row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
 .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4); }
 .footer-note {
-  max-width: var(--content-width); margin: 0 auto; padding: 0 var(--space-4) var(--space-6);
+  display: block; max-width: var(--content-width); margin: 0 auto; padding: 0 var(--space-4) var(--space-6);
   font-size: var(--md-label-s); color: var(--md-on-surface-variant); text-align: center;
 }
 

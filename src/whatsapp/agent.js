@@ -97,16 +97,29 @@ export async function answerMessage({ message, user, deps }) {
   return { reply: "Ho gaya.", toolsRun, timings };
 }
 
-/** Send the reply as text, then as a voice note when speech works. Returns what was sent. */
+const MAX_SPOKEN_CHARS = 600;
+
+/** The voice note reads the reply without markup, cut at a sentence end so it stays short. */
+export function spokenVersion(reply) {
+  const plain = reply.replace(/\*/g, "").replace(/\s+/g, " ").trim();
+  if (plain.length <= MAX_SPOKEN_CHARS) return plain;
+  const cut = plain.slice(0, MAX_SPOKEN_CHARS);
+  const end = Math.max(cut.lastIndexOf("।"), cut.lastIndexOf("."), cut.lastIndexOf("!"), cut.lastIndexOf("?"));
+  return end > MAX_SPOKEN_CHARS / 2 ? cut.slice(0, end + 1) : cut;
+}
+
+/** Send the reply as text and as a voice note at the same time. Returns what was sent. */
 export async function deliverReply({ to, reply, user, deps, timings = {} }) {
   const { ai, client, log = console.log } = deps;
   const sent = { text: false, audio: false };
   const timed = async (label, work) => { const start = Date.now(); try { return await work(); } finally { timings[label] = Date.now() - start; } };
+  // Speech synthesis is the slow step, so it starts at once and runs while the text message goes out.
+  const speech = timed("tts", () => ai.generateSpeech(spokenVersion(reply)));
+  speech.catch(() => {});
   await timed("sendText", () => client.sendText(to, reply));
   sent.text = true;
   try {
-    const speech = await timed("tts", () => ai.generateSpeech(reply.replace(/\*/g, "").slice(0, 1200)));
-    const mp3 = wavToMp3(Buffer.from(speech.data, "base64"));
+    const mp3 = wavToMp3(Buffer.from((await speech).data, "base64"));
     const mediaId = await timed("upload", () => client.uploadMedia({ buffer: mp3, filename: "saathi.mp3", mimeType: "audio/mpeg" }));
     await timed("sendAudio", () => client.sendAudio(to, mediaId));
     sent.audio = true;

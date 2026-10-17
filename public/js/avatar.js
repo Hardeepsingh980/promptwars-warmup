@@ -85,10 +85,10 @@ export function createAvatar(container) {
   let resting = "idle";
   let analyser = null;
   let frequencies = null;
-  let mouth = { rx: MOUTH.minRx, ry: MOUTH.minRy };
-  let look = { x: 0, y: 0, targetX: 0, targetY: 0 };
+  const mouth = { rx: MOUTH.minRx, ry: MOUTH.minRy };
+  const look = { x: 0, y: 0, targetX: 0, targetY: 0 };
   let pointer = null;
-  let blink = { until: 0, next: performance.now() + 2500 };
+  const blink = { until: 0, next: performance.now() + 2500 };
   let glanceAt = performance.now() + 2000;
   let speakingEnergy = 0;
   let frame = 0;
