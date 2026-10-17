@@ -66,11 +66,12 @@ export async function startTestServer({ rateLimit = { windowMs: 60_000, max: 10_
   /** A client that keeps its own session cookie, like a browser. */
   function client() {
     let cookie = "";
-    const call = async (path, { method = "GET", body, headers = {} } = {}) => {
+    const call = async (path, { method = "GET", body, headers = {}, signal } = {}) => {
       const response = await fetch(baseUrl + path, {
         method,
         headers: { "Content-Type": "application/json", ...(cookie ? { Cookie: cookie } : {}), ...headers },
         body: body === undefined ? undefined : JSON.stringify(body),
+        signal,
       });
       const setCookie = response.headers.get("set-cookie");
       if (setCookie) cookie = setCookie.split(";")[0];
@@ -83,5 +84,6 @@ export async function startTestServer({ rateLimit = { windowMs: 60_000, max: 10_
     return { call, json, signup: (user) => json("/api/auth/signup", { method: "POST", body: user }) };
   }
 
-  return { ai, whatsapp, db, services, baseUrl, client, close: () => server.close() };
+  const close = () => { server.closeAllConnections(); server.close(); };
+  return { ai, whatsapp, db, services, baseUrl, client, close };
 }

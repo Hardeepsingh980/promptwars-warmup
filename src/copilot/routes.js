@@ -169,7 +169,10 @@ export function createCopilotRouter({ ai, users, copilot, earnings, toolKey, web
     push(copilot.version(userId));
     const unsubscribe = copilot.subscribe(userId, push);
     const heartbeat = setInterval(() => response.write(": ping\n\n"), 25_000);
-    request.on("close", () => { clearInterval(heartbeat); unsubscribe(); });
+    heartbeat.unref();
+    const stop = () => { clearInterval(heartbeat); unsubscribe(); };
+    request.on("close", stop);
+    response.on("close", stop);
   });
 
   router.put("/rider", (request, response) => {
