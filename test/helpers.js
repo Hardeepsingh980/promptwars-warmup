@@ -48,7 +48,7 @@ export function createFakeWhatsApp() {
     async uploadMedia({ buffer, mimeType }) { const id = `media-${this.sent.length + 1}`; this.media.set(id, { buffer, mimeType }); return id; },
     async getMedia(mediaId) {
       if (mediaId === "img-1") return { buffer: Buffer.from("fakejpeg"), mimeType: "image/jpeg" };
-      if (mediaId === "voice-1") return { buffer: Buffer.from("fakeogg"), mimeType: "audio/ogg" };
+      if (mediaId === "voice-1") return { buffer: silentWav(), mimeType: "audio/ogg" };
       throw new Error("unknown media");
     },
   };

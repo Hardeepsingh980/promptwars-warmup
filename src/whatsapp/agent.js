@@ -8,12 +8,12 @@ import { LANGUAGES } from "../config.js";
 import { summarizeLog } from "../../shared/pay.js";
 import { TOOL_DECLARATIONS, runTool } from "../copilot/tools.js";
 import { wavToMp3 } from "../audio/mp3.js";
+import { prepareAudioForGemini } from "../audio/transcode.js";
 
 const MAX_TOOL_ROUNDS = 4;
 const MAX_MEDIA_BYTES = 16 * 1024 * 1024;
 const SIGNUP_TEXT = "Namaste! Main Saathi hoon, Haqdar app ka co-pilot. Is number se abhi koi account nahi juda hai. Pehle app mein isi mobile number se sign up karein, phir yahan likhein ya bolein.";
 
-const AUDIO_MIME = { "audio/ogg": "audio/ogg", "audio/opus": "audio/ogg", "audio/mpeg": "audio/mp3", "audio/mp4": "audio/mp4", "audio/aac": "audio/aac", "audio/amr": "audio/amr", "audio/wav": "audio/wav" };
 
 /** Tools that make sense in a chat. Opening an app screen does not. */
 export const WHATSAPP_TOOLS = TOOL_DECLARATIONS.filter((tool) => tool.name !== "open_screen");
@@ -34,10 +34,16 @@ export function buildSystemInstruction({ user, rider, unheard, week }) {
 async function buildParts(message, client) {
   const parts = [];
   if (message.type === "image" || message.type === "audio") {
-    const { buffer, mimeType } = await fetchMedia(message, client);
-    if (buffer.length > MAX_MEDIA_BYTES) throw new Error("The file is too large");
-    const mime = message.type === "audio" ? AUDIO_MIME[mimeType] ?? AUDIO_MIME[message.mimeType?.split(";")[0]] ?? "audio/ogg" : mimeType.startsWith("image/") ? mimeType : "image/jpeg";
-    parts.push({ inlineData: { mimeType: mime, data: buffer.toString("base64") } });
+    const media = await fetchMedia(message, client);
+    if (media.buffer.length > MAX_MEDIA_BYTES) throw new Error("The file is too large");
+    if (message.type === "audio") {
+      // WhatsApp voice notes are OGG Opus, which Gemini does not read. ffmpeg turns them into WAV.
+      const declared = media.mimeType.startsWith("audio/") ? media.mimeType : message.mimeType ?? "audio/ogg";
+      const audio = await prepareAudioForGemini({ buffer: media.buffer, mimeType: declared });
+      parts.push({ inlineData: { mimeType: audio.mimeType, data: audio.buffer.toString("base64") } });
+    } else {
+      parts.push({ inlineData: { mimeType: media.mimeType.startsWith("image/") ? media.mimeType : "image/jpeg", data: media.buffer.toString("base64") } });
+    }
   }
   const text = [message.text, message.caption].filter(Boolean).join("\n");
   if (text) parts.push({ text });

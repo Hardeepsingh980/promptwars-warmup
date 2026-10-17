@@ -21,7 +21,8 @@ async function callModel(model, body) {
     });
     const data = await response.json();
     if (!response.ok) {
-      const message = data?.error?.message ?? `Gemini returned HTTP ${response.status}`;
+      const detail = data?.error?.details?.map((item) => item.reason ?? item.message ?? "").filter(Boolean).join("; ");
+      const message = `${data?.error?.message ?? `Gemini returned HTTP ${response.status}`}${detail ? ` (${detail})` : ""}`;
       throw new HttpError(502, message);
     }
     return data;

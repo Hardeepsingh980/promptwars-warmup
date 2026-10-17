@@ -124,7 +124,8 @@ test("a voice note is sent to the model as audio", async () => {
   await c.json(`/api/whatsapp/webhook/${SECRETS.whatsapp.webhookToken}`, { method: "POST", body: cloudApiPayload({ from: PHONE, id: "wamid.voice", type: "audio", audio: { id: "voice-1", mime_type: "audio/ogg; codecs=opus", voice: true } }) });
   await untilSent(1);
   const parts = server.ai.calls[0].contents[0].parts;
-  assert.equal(parts[0].inlineData.mimeType, "audio/ogg");
+  const { hasFfmpeg } = await import("../src/audio/transcode.js");
+  assert.equal(parts[0].inlineData.mimeType, (await hasFfmpeg()) ? "audio/wav" : "audio/ogg");
   assert.match(parts[1].text, /voice note/);
 });
 
@@ -136,4 +137,23 @@ test("a duplicate-message rejection from Cheerio is not treated as a failure", a
   assert.equal(result.payload.duplicate, true);
   const failing = createWhatsAppClient({ apiKey: "k", baseUrl: "https://cheerio.test", fetchImpl: async () => new Response("{}", { status: 500, headers: { "content-type": "application/json" } }) });
   await assert.rejects(() => failing.sendText("919999900101", "hello"), /failed with 500/);
+});
+
+test("audio Gemini already reads is passed through; other audio converts with ffmpeg when present", async () => {
+  const { prepareAudioForGemini, hasFfmpeg, geminiReadsAudio } = await import("../src/audio/transcode.js");
+  assert.equal(geminiReadsAudio("audio/wav"), true);
+  assert.equal(geminiReadsAudio("audio/ogg"), false);
+  const wav = await prepareAudioForGemini({ buffer: silentWav(), mimeType: "audio/wav" });
+  assert.equal(wav.mimeType, "audio/wav");
+  const mp3 = await prepareAudioForGemini({ buffer: Buffer.from("x"), mimeType: "audio/mpeg; codecs=1" });
+  assert.equal(mp3.mimeType, "audio/mp3");
+  if (await hasFfmpeg()) {
+    const { wavToMp3 } = await import("../src/audio/mp3.js");
+    const converted = await prepareAudioForGemini({ buffer: wavToMp3(silentWav()), mimeType: "audio/ogg" });
+    assert.equal(converted.mimeType, "audio/wav");
+    assert.equal(converted.buffer.toString("ascii", 0, 4), "RIFF");
+  } else {
+    const passthrough = await prepareAudioForGemini({ buffer: Buffer.from("x"), mimeType: "audio/ogg; codecs=opus" });
+    assert.equal(passthrough.converted, false);
+  }
 });

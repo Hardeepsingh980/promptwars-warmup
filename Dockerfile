@@ -4,6 +4,9 @@ FROM node:22-slim
 ENV NODE_ENV=production
 WORKDIR /app
 
+# ffmpeg converts WhatsApp voice notes (OGG Opus) into WAV for Gemini.
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
+
 # Install only production packages, from the lock file.
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
