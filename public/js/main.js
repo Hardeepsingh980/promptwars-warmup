@@ -84,24 +84,29 @@ function fillSelects() {
   }
 }
 
+let languageRequest = 0;
+
+/** Switch the interface language. A newer call wins if two overlap, so labels and text never mismatch. */
 async function setLanguage(code) {
   if (!(code in meta.languages)) return;
+  const request = ++languageRequest;
   language = code;
   store.setLanguage(code);
-  document.documentElement.lang = code;
-  $("#lang-current").textContent = meta.languages[code].native;
-  for (const option of $$("#lang-options [data-lang]")) option.setAttribute("aria-checked", String(option.dataset.lang === code));
   const button = $("#lang-button");
   button.setAttribute("aria-busy", "true");
   try {
     await loadStrings(code);
   } finally {
-    button.removeAttribute("aria-busy");
+    if (request === languageRequest) button.removeAttribute("aria-busy");
   }
+  if (request !== languageRequest) return;
+  document.documentElement.lang = code;
+  $("#lang-current").textContent = meta.languages[code].native;
+  for (const option of $$("#lang-options [data-lang]")) option.setAttribute("aria-checked", String(option.dataset.lang === code));
   applyStrings();
   fillSelects();
   if (user && user.language !== code) {
-    api.auth.profile({ language: code }).then(({ user: updated }) => { user = updated; }).catch(() => {});
+    api.auth.profile({ language: code }).then(({ user: updated }) => { if (updated) user = { ...user, ...updated }; }).catch(() => {});
   }
 }
 
