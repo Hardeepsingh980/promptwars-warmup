@@ -68,14 +68,17 @@ export async function answerMessage({ message, user, deps }) {
   const week = summarizeLog(earnings.list(user.id));
   const system = buildSystemInstruction({ user, rider, unheard, week });
 
-  const contents = [{ role: "user", parts: await buildParts(message, client) }];
+  const timings = {};
+  const timed = async (label, work) => { const start = Date.now(); try { return await work(); } finally { timings[label] = (timings[label] ?? 0) + Date.now() - start; } };
+
+  const contents = [{ role: "user", parts: await timed("media", () => buildParts(message, client)) }];
   const toolsRun = [];
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-    const parts = await ai.generateWithTools({ system, contents, tools: WHATSAPP_TOOLS });
+    const parts = await timed("model", () => ai.generateWithTools({ system, contents, tools: WHATSAPP_TOOLS }));
     const calls = parts.filter((part) => part.functionCall);
     if (calls.length === 0) {
       const reply = parts.filter((part) => typeof part.text === "string").map((part) => part.text).join("").trim();
-      return { reply: reply || "Theek hai.", toolsRun };
+      return { reply: reply || "Theek hai.", toolsRun, timings };
     }
     contents.push({ role: "model", parts });
     const responses = calls.map(({ functionCall }) => {
@@ -85,20 +88,21 @@ export async function answerMessage({ message, user, deps }) {
     });
     contents.push({ role: "user", parts: responses });
   }
-  return { reply: "Ho gaya.", toolsRun };
+  return { reply: "Ho gaya.", toolsRun, timings };
 }
 
 /** Send the reply as text, then as a voice note when speech works. Returns what was sent. */
-export async function deliverReply({ to, reply, user, deps }) {
+export async function deliverReply({ to, reply, user, deps, timings = {} }) {
   const { ai, client, log = console.log } = deps;
   const sent = { text: false, audio: false };
-  await client.sendText(to, reply);
+  const timed = async (label, work) => { const start = Date.now(); try { return await work(); } finally { timings[label] = Date.now() - start; } };
+  await timed("sendText", () => client.sendText(to, reply));
   sent.text = true;
   try {
-    const speech = await ai.generateSpeech(reply.replace(/\*/g, "").slice(0, 1200));
+    const speech = await timed("tts", () => ai.generateSpeech(reply.replace(/\*/g, "").slice(0, 1200)));
     const mp3 = wavToMp3(Buffer.from(speech.data, "base64"));
-    const mediaId = await client.uploadMedia({ buffer: mp3, filename: "saathi.mp3", mimeType: "audio/mpeg" });
-    await client.sendAudio(to, mediaId);
+    const mediaId = await timed("upload", () => client.uploadMedia({ buffer: mp3, filename: "saathi.mp3", mimeType: "audio/mpeg" }));
+    await timed("sendAudio", () => client.sendAudio(to, mediaId));
     sent.audio = true;
   } catch (error) {
     log(`whatsapp voice reply skipped for ${user.name}: ${error.message}`);
@@ -116,9 +120,11 @@ export async function handleIncoming(message, deps) {
     return { handled: false, reason: "unknown number" };
   }
   try {
-    const { reply, toolsRun } = await answerMessage({ message, user, deps });
-    const sent = await deliverReply({ to: message.from, reply, user, deps });
-    log(`whatsapp reply to ${user.name}: tools=[${toolsRun.join(",")}] text=${sent.text} audio=${sent.audio}`);
+    const received = Date.now();
+    const { reply, toolsRun, timings } = await answerMessage({ message, user, deps });
+    const sent = await deliverReply({ to: message.from, reply, user, deps, timings });
+    const spent = Object.entries(timings).map(([step, ms]) => `${step}=${(ms / 1000).toFixed(1)}s`).join(" ");
+    log(`whatsapp reply to ${user.name} (${message.type}): tools=[${toolsRun.join(",")}] text=${sent.text} audio=${sent.audio} total=${((Date.now() - received) / 1000).toFixed(1)}s ${spent}`);
     return { handled: true, reply, toolsRun, sent };
   } catch (error) {
     log(`whatsapp error for ${user.name}: ${error.message}`);
