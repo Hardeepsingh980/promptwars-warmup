@@ -111,8 +111,8 @@ export async function handleIncoming(message, deps) {
   const { users, client, log = console.log } = deps;
   const user = users.byPhone(message.from);
   if (!user) {
-    log(`whatsapp from unknown number ending ${message.from.slice(-4)}: sent the sign-up note`);
-    await client.sendText(message.from, SIGNUP_TEXT);
+    log(`whatsapp from unknown number ending ${message.from.slice(-4)}: sending the sign-up note`);
+    await client.sendText(message.from, SIGNUP_TEXT).catch((error) => log(`sign-up note failed: ${error.message}`));
     return { handled: false, reason: "unknown number" };
   }
   try {

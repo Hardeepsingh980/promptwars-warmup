@@ -127,3 +127,13 @@ test("a voice note is sent to the model as audio", async () => {
   assert.equal(parts[0].inlineData.mimeType, "audio/ogg");
   assert.match(parts[1].text, /voice note/);
 });
+
+test("a duplicate-message rejection from Cheerio is not treated as a failure", async () => {
+  const { createWhatsAppClient } = await import("../src/whatsapp/client.js");
+  const fetchImpl = async () => new Response(JSON.stringify({ error: "Duplicate message (within TTL)" }), { status: 400, headers: { "content-type": "application/json" } });
+  const client = createWhatsAppClient({ apiKey: "k", baseUrl: "https://cheerio.test", fetchImpl });
+  const result = await client.sendText("919999900101", "hello");
+  assert.equal(result.payload.duplicate, true);
+  const failing = createWhatsAppClient({ apiKey: "k", baseUrl: "https://cheerio.test", fetchImpl: async () => new Response("{}", { status: 500, headers: { "content-type": "application/json" } }) });
+  await assert.rejects(() => failing.sendText("919999900101", "hello"), /failed with 500/);
+});

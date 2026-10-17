@@ -22,8 +22,17 @@ export function createWhatsAppClient({ apiKey, baseUrl = DEFAULT_BASE_URL, fetch
     return { payload, contentType };
   }
 
-  const sendMessage = (message) =>
-    call("/v1/whatsapp/direct/send", { body: JSON.stringify({ recipient_type: "individual", ...message }), headers: { "Content-Type": "application/json" } });
+  /** Cheerio rejects an identical message to the same number within a short window. That is not an error for us. */
+  const isDuplicate = (error) => /duplicate message/i.test(error.message);
+
+  const sendMessage = async (message) => {
+    try {
+      return await call("/v1/whatsapp/direct/send", { body: JSON.stringify({ recipient_type: "individual", ...message }), headers: { "Content-Type": "application/json" } });
+    } catch (error) {
+      if (isDuplicate(error)) return { payload: { duplicate: true }, contentType: "application/json" };
+      throw error;
+    }
+  };
 
   return {
     /** Send a plain text message. */
