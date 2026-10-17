@@ -5,4 +5,4 @@ node_modules/
 .claude/
 *.log
 .DS_Store
-data/
+/data/
