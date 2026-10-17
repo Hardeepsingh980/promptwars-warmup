@@ -2,6 +2,8 @@
 
 Haqdar ("the rightful claimant" in Hindi and Urdu) is a Gemini-powered helper for gig and informal workers in India: delivery partners, drivers, and daily-wage workers. It works in 9 Indian languages.
 
+Live app: https://haqdar-945707801757.asia-south1.run.app
+
 ## What a worker can do
 
 1. Ask: take a photo of an app screen, a fine, or any paper, or speak or type a question. Gemini explains it in the worker's language, warns about scams, and gives next steps.
