@@ -128,8 +128,11 @@ export function createAvatar(container) {
     };
   }
 
+  let tick = 0;
   function animate(now) {
     frame = requestAnimationFrame(animate);
+    // While nobody is speaking, redraw every other frame: 30 fps is plenty for breathing and blinks.
+    if (state !== "speaking" && (tick++ & 1)) return;
     const seconds = now / 1000;
     const calm = reduceMotion.matches;
 

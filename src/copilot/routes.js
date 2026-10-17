@@ -154,7 +154,22 @@ export function createCopilotRouter({ ai, users, copilot, earnings, toolKey, web
   router.get("/rider", (request, response) => {
     response.set("Cache-Control", "no-store");
     const userId = request.user.id;
-    response.json({ rider: copilot.getRider(userId), messages: copilot.listMessages(userId).map(publicMessage), onLine: copilot.lineOwnerId() === userId });
+    response.json({ rider: copilot.getRider(userId), messages: copilot.listMessages(userId).map(publicMessage), onLine: copilot.lineOwnerId() === userId, version: copilot.version(userId) });
+  });
+
+  /**
+   * Server-sent events: one open connection per screen, a tiny message per change.
+   * The browser fetches the new state only when something changed, instead of polling.
+   */
+  router.get("/events", (request, response) => {
+    const userId = request.user.id;
+    response.set({ "Content-Type": "text/event-stream", "Cache-Control": "no-store", Connection: "keep-alive", "X-Accel-Buffering": "no" });
+    response.flushHeaders();
+    const push = (version) => response.write(`event: version\ndata: ${version}\n\n`);
+    push(copilot.version(userId));
+    const unsubscribe = copilot.subscribe(userId, push);
+    const heartbeat = setInterval(() => response.write(": ping\n\n"), 25_000);
+    request.on("close", () => { clearInterval(heartbeat); unsubscribe(); });
   });
 
   router.put("/rider", (request, response) => {

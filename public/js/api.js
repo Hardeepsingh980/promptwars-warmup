@@ -51,6 +51,8 @@ export const api = {
     heard: (ids) => post("/api/copilot/messages/heard", { ids }),
     remove: (id) => request(`/api/copilot/messages/${encodeURIComponent(id)}`, { method: "DELETE" }),
     recordingUrl: (id) => `/api/copilot/messages/${encodeURIComponent(id)}/recording`,
+    /** A live stream of change versions. The caller refreshes when one arrives. */
+    events: () => new EventSource("/api/copilot/events"),
     ask: (body) => post("/api/copilot/ask", body),
   },
 };

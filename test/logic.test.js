@@ -86,15 +86,19 @@ test("mergeById never lets the model replace our link or name", () => {
   assert.deepEqual(merged, [{ id: "a", name: "Real", link: "https://a", benefit: "ok" }]);
 });
 
-test("rate limiter blocks after max requests in the window", () => {
+test("rate limiter blocks after max requests in the window and sweeps stale keys", () => {
   let clock = 0;
-  const limiter = createRateLimiter({ windowMs: 1000, max: 2, now: () => clock });
+  const limiter = createRateLimiter({ windowMs: 1000, max: 2, now: () => clock, sweepEvery: 5000 });
   assert.equal(limiter.isAllowed("ip"), true);
   assert.equal(limiter.isAllowed("ip"), true);
   assert.equal(limiter.isAllowed("ip"), false);
   assert.equal(limiter.isAllowed("other"), true);
   clock = 1001;
   assert.equal(limiter.isAllowed("ip"), true);
+  assert.equal(limiter.size(), 2);
+  clock = 6000;
+  limiter.isAllowed("third");
+  assert.equal(limiter.size(), 1, "old keys are swept once the sweep interval passes");
 });
 
 test("validators reject bad input with HTTP 400", () => {

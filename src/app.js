@@ -70,14 +70,23 @@ export function createApp({ ai, db, rateLimit = config.rateLimit, secrets = conf
   app.disable("x-powered-by");
   app.set("trust proxy", 1);
   app.use(securityHeaders);
-  app.use(compression());
-  app.use(express.static(PUBLIC_DIR, { index: "index.html" }));
-  app.use("/shared", express.static(SHARED_DIR));
+  // The event stream must not be buffered by the compressor.
+  app.use(compression({ filter: (request, response) => !request.originalUrl.startsWith("/api/copilot/events") && compression.filter(request, response) }));
+  // Scripts and styles are cached for ten minutes with ETags; the HTML shell always revalidates.
+  const staticOptions = {
+    maxAge: "10m",
+    index: "index.html",
+    setHeaders: (response, filePath) => { if (filePath.endsWith(".html")) response.set("Cache-Control", "no-cache"); },
+  };
+  app.use(express.static(PUBLIC_DIR, staticOptions));
+  app.use("/shared", express.static(SHARED_DIR, staticOptions));
   app.get("/health", (request, response) => response.json({ ok: true }));
 
   const api = express.Router();
   api.use(createRateLimiter(rateLimit).middleware);
-  api.use(express.json({ limit: config.jsonBodyLimit }));
+  // Only the routes that take a photo accept a large body. Everything else stays small.
+  api.use(["/understand", "/complaint"], express.json({ limit: config.jsonBodyLimit }));
+  api.use(express.json({ limit: config.smallBodyLimit }));
   api.use(sessionMiddleware({ users, secret: secrets.sessionSecret }));
 
   api.get("/meta", (request, response) => {

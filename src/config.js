@@ -24,6 +24,7 @@ export const config = Object.freeze({
   maxSpeakChars: 1200,
   maxMediaBytes: 8 * 1024 * 1024,
   jsonBodyLimit: "12mb",
+  smallBodyLimit: "64kb",
   rateLimit: Object.freeze({ windowMs: 60_000, max: 40 }),
 });
 
