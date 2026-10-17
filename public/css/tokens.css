@@ -1,0 +1,90 @@
+/* Material You (Material Design 3) tokens. Seed color: #6750A4.
+   Every color, radius, shadow, and motion value in the app comes from here. */
+:root {
+  color-scheme: light;
+
+  /* Color roles */
+  --md-surface: #fffbfe;
+  --md-on-surface: #1c1b1f;
+  --md-on-surface-variant: #49454f;
+  --md-surface-container: #f3edf7;
+  --md-surface-container-low: #e7e0ec;
+  --md-surface-container-high: #ece6f0;
+  --md-primary: #6750a4;
+  --md-on-primary: #ffffff;
+  --md-primary-container: #eaddff;
+  --md-on-primary-container: #21005d;
+  --md-secondary-container: #e8def8;
+  --md-on-secondary-container: #1d192b;
+  --md-tertiary: #7d5260;
+  --md-on-tertiary: #ffffff;
+  --md-tertiary-container: #ffd8e4;
+  --md-on-tertiary-container: #31111d;
+  --md-error: #b3261e;
+  --md-error-container: #f9dedc;
+  --md-on-error-container: #410e0b;
+  --md-outline: #79747e;
+  --md-outline-variant: #cac4d0;
+
+  /* Extra roles for the pay verdict. Each pair meets 4.5:1 contrast. */
+  --md-success-container: #c4eed0;
+  --md-on-success-container: #072711;
+  --md-warning-container: #ffdea3;
+  --md-on-warning-container: #261900;
+
+  /* Type */
+  --md-font: "Roboto", "Noto Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --md-display: 3.5rem;
+  --md-headline-l: 3rem;
+  --md-headline-m: 2rem;
+  --md-title-l: 1.5rem;
+  --md-body-l: 1.25rem;
+  --md-body-m: 1rem;
+  --md-label-m: 0.875rem;
+  --md-label-s: 0.75rem;
+
+  /* Shape */
+  --md-radius-xs: 8px;
+  --md-radius-s: 12px;
+  --md-radius-m: 16px;
+  --md-radius-l: 24px;
+  --md-radius-xl: 28px;
+  --md-radius-2xl: 32px;
+  --md-radius-hero: 48px;
+  --md-radius-full: 9999px;
+
+  /* Elevation: soft, diffuse, low-opacity shadows */
+  --md-shadow-1: 0 1px 2px rgb(28 27 31 / 0.08), 0 1px 3px 1px rgb(28 27 31 / 0.05);
+  --md-shadow-2: 0 2px 6px 2px rgb(28 27 31 / 0.08), 0 1px 2px rgb(28 27 31 / 0.1);
+  --md-shadow-3: 0 6px 16px 4px rgb(28 27 31 / 0.1), 0 2px 4px rgb(28 27 31 / 0.08);
+
+  /* State layer opacities */
+  --md-state-hover: 0.08;
+  --md-state-focus: 0.1;
+  --md-state-press: 0.12;
+
+  /* Motion */
+  --md-ease: cubic-bezier(0.2, 0, 0, 1);
+  --md-fast: 200ms;
+  --md-standard: 300ms;
+  --md-slow: 450ms;
+
+  /* Layout */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --content-width: 720px;
+  --nav-height: 80px;
+}
+
+@media (max-width: 600px) {
+  :root {
+    --md-radius-hero: 32px;
+    --md-headline-m: 1.625rem;
+    --md-title-l: 1.25rem;
+  }
+}
