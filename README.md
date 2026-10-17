@@ -21,7 +21,7 @@ The demo shares one phone line, so the phone agent speaks for the user who last 
 
 The rider can use everything from WhatsApp, with no app open. They message the Haqdar number from their registered phone with a text, a voice note, or a photo. One message can carry several requests at once, for example a payslip screenshot with "why was this cut, log it, and I am heading to Koramangala in 15 minutes". Gemini reads the photo or the audio, calls every tool it needs (log earnings, set the order, update the ride status), and answers in the rider's language. The reply comes back as text and as a voice note made with Gemini text to speech.
 
-Incoming messages arrive on `POST /api/whatsapp/webhook/<token>`. The server answers at once and works in the background, drops repeated deliveries, and ignores numbers that have no account (it sends them a short sign-up note). Replies go out through the Cheerio Direct API.
+WhatsApp voice notes come as OGG Opus, which Gemini does not read, so the server converts them to WAV with ffmpeg first. Incoming messages arrive on `POST /api/whatsapp/webhook/<token>`. The server answers at once and works in the background, drops repeated deliveries, and ignores numbers that have no account (it sends them a short sign-up note). Replies go out through the Cheerio Direct API.
 
 ## The user journey
 
@@ -43,7 +43,7 @@ Each screen can read its answer aloud with Gemini text to speech. The whole inte
 
 ## Run it
 
-1. Install Node.js 22.9 or later.
+1. Install Node.js 22.9 or later, and ffmpeg (used to convert WhatsApp voice notes for Gemini). On a Mac: `brew install ffmpeg`.
 2. Copy `.env.example` to `.env`. Put your Gemini API key in it, and set `COPILOT_TOOL_KEY` to a long random value.
 3. Run `npm install`.
 4. Run `npm start`, then open http://localhost:3000.
