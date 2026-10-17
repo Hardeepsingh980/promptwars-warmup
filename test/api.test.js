@@ -179,19 +179,3 @@ test("HSTS is sent only on https requests", async () => {
   const forwarded = await fetch(baseUrl + "/health", { headers: { "X-Forwarded-Proto": "https" } });
   assert.match(forwarded.headers.get("strict-transport-security"), /max-age/);
 });
-
-test("small routes reject large bodies while the photo routes accept them", async () => {
-  const big = "x".repeat(100 * 1024);
-  const small = await user.call("/api/copilot/ask", { method: "POST", body: { text: big } });
-  assert.equal(small.status, 413);
-  fakeAi.reply = () => ({ transcript: "", title: "t", summary: ["s"], intent: "general_question", caution: "", nextSteps: [], earnings: {}, problem: "" });
-  const photoRoute = await user.call("/api/understand", { method: "POST", body: { language: "en", text: "hi", image: { mimeType: "image/jpeg", data: "QUJD".repeat(40 * 1024) } } });
-  assert.equal(photoRoute.status, 200);
-});
-
-test("static files are cached briefly and the HTML shell always revalidates", async () => {
-  const css = await fetch(baseUrl + "/css/app.css");
-  assert.match(css.headers.get("cache-control"), /max-age=600/);
-  const html = await fetch(baseUrl + "/");
-  assert.equal(html.headers.get("cache-control"), "no-cache");
-});

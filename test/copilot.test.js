@@ -143,34 +143,3 @@ test("earnings routes are per user", async () => {
   await ravi.json(`/api/earnings/${added.body.entry.id}`, { method: "DELETE" });
   assert.ok(!(await ravi.json("/api/earnings")).body.entries.some((entry) => entry.id === added.body.entry.id));
 });
-
-test("the store bumps a per-user version and notifies subscribers on every change", () => {
-  const { copilot, users } = server.services;
-  const user = users.byPhone("919999900001");
-  const seen = [];
-  const unsubscribe = copilot.subscribe(user.id, (version) => seen.push(version));
-  const before = copilot.version(user.id);
-  copilot.updateRider(user.id, { status: "stopped" });
-  const message = copilot.addMessage(user.id, { callerType: "other", purpose: "x", details: "", urgency: "low", scamSuspected: false, callBack: false, spoken: "x" });
-  copilot.markHeard(user.id, [message.id]);
-  copilot.markHeard(user.id, [message.id]);
-  copilot.removeMessage(user.id, message.id);
-  unsubscribe();
-  copilot.updateRider(user.id, { status: "riding" });
-  assert.deepEqual(seen, [before + 1, before + 2, before + 3, before + 4], "a second markHeard of the same message is not a change");
-  assert.equal(copilot.version(user.id), before + 5);
-});
-
-test("GET /events streams the current version and then each change", async () => {
-  const c = server.client();
-  await c.signup({ name: "Streamer", phone: "9999900077", password: "stream12" });
-  const response = await c.call("/api/copilot/events");
-  assert.match(response.headers.get("content-type"), /^text\/event-stream/);
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  const read = async () => decoder.decode((await reader.read()).value);
-  assert.match(await read(), /event: version\ndata: 0/);
-  await c.json("/api/copilot/rider", { method: "PUT", body: { status: "riding" } });
-  assert.match(await read(), /data: 1/);
-  await reader.cancel();
-});

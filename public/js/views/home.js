@@ -6,8 +6,8 @@ import * as saathi from "../saathi.js";
 import { speechUrl } from "../speech.js";
 import { renderCaptions } from "./captions.js";
 
-/** Updates arrive by server push. A slow poll is only a safety net if the stream drops. */
-const FALLBACK_POLL_MS = 60_000;
+/** Poll faster while riding, when a call message can arrive, and slowly otherwise. */
+const POLL_MS = { riding: 5000, idle: 20000 };
 const CALLER_ICONS = { customer: "person", restaurant: "restaurant", platform: "two_wheeler", family: "family_restroom", other: "call" };
 
 let app;
@@ -18,8 +18,6 @@ let unsubscribe = null;
 let captions;
 let orderFormFilled = false;
 let pollTimer = null;
-let stream = null;
-let version = -1;
 
 export function init(context) {
   app = context;
@@ -48,15 +46,6 @@ export function enter() {
   unsubscribe = saathi.listen(onSaathi);
   setLiveButton(saathi.isLive() ? "live" : "idle");
   refresh();
-  listenForChanges();
-}
-
-/** Open the change stream. Each event names a version; a new version means one fetch. */
-function listenForChanges() {
-  stream?.close();
-  stream = api.copilot.events();
-  stream.addEventListener("version", (event) => { if (Number(event.data) !== version) refresh(); });
-  stream.onerror = () => schedulePoll();
   schedulePoll();
 }
 
@@ -65,13 +54,11 @@ function schedulePoll() {
   pollTimer = setTimeout(async () => {
     if (!document.hidden) await refresh();
     schedulePoll();
-  }, FALLBACK_POLL_MS);
+  }, rider?.status === "riding" ? POLL_MS.riding : POLL_MS.idle);
 }
 
 export function leave() {
   clearTimeout(pollTimer);
-  stream?.close();
-  stream = null;
   unsubscribe?.();
   unsubscribe = null;
 }
@@ -128,8 +115,7 @@ async function update(changes) {
 async function refresh(force = false) {
   try {
     const data = await api.copilot.get();
-    const changed = force || data.version !== version;
-    version = data.version;
+    const changed = force || JSON.stringify([data.rider, data.messages]) !== JSON.stringify([rider, messages]);
     rider = data.rider;
     messages = data.messages;
     if (changed) {
